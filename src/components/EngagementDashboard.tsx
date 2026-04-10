@@ -548,7 +548,7 @@ export default function EngagementDashboard() {
                         <CardDescription className="text-xs">Perbandingan interaksi harian Instagram & Facebook</CardDescription>
                       </CardHeader>
                       <CardContent className="p-6 h-[300px] min-h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                           <BarChart data={chartData}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                             <XAxis 
