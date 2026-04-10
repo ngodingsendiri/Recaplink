@@ -37,7 +37,7 @@ import { DailyEngagement, Employee } from '../types';
 import EmployeeManager from './EmployeeManager';
 import { useAuth } from './FirebaseProvider';
 import { db, signIn, logout } from '../lib/firebase';
-import { collection, onSnapshot, query, orderBy, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc, setDoc, serverTimestamp, limit } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { 
   BarChart, 
@@ -121,7 +121,7 @@ export default function EngagementDashboard() {
       return;
     }
 
-    const q = query(collection(db, 'dailyEngagement'), orderBy('date', 'desc'));
+    const q = query(collection(db, 'dailyEngagement'), orderBy('date', 'desc'), limit(30));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyEngagement));
       setDailyEngagements(data);
@@ -248,14 +248,20 @@ export default function EngagementDashboard() {
     try {
       const processInput = (input: string) => {
         const lowerInput = input.toLowerCase();
-        return employees
-          .filter(emp => {
-            const nameMatch = emp.name.toLowerCase().trim() && lowerInput.includes(emp.name.toLowerCase().trim());
-            const igMatch = emp.igUsername?.replace('@', '').toLowerCase().trim() && lowerInput.includes(emp.igUsername.replace('@', '').toLowerCase().trim());
-            const fbMatch = emp.fbName?.toLowerCase().trim() && lowerInput.includes(emp.fbName.toLowerCase().trim());
-            return nameMatch || igMatch || fbMatch;
-          })
-          .map(emp => emp.id);
+        const matchedIds: string[] = [];
+        
+        employees.forEach(emp => {
+          const nameMatch = emp.name.toLowerCase().trim();
+          const igMatch = emp.igUsername?.replace('@', '').toLowerCase().trim();
+          const fbMatch = emp.fbName?.toLowerCase().trim();
+          
+          if ((nameMatch && lowerInput.includes(nameMatch)) || 
+              (igMatch && lowerInput.includes(igMatch)) || 
+              (fbMatch && lowerInput.includes(fbMatch))) {
+            matchedIds.push(emp.id);
+          }
+        });
+        return matchedIds;
       };
 
       const igEngagedIds = processInput(igRawInput);
