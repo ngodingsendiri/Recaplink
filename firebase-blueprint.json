@@ -1,0 +1,49 @@
+{
+  "entities": {
+    "Employee": {
+      "title": "Employee",
+      "description": "Employee record for engagement tracking",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Full name of the employee" },
+        "nip": { "type": "string", "description": "Employee ID number" },
+        "bidang": { "type": "string", "description": "Department or field" },
+        "igUsername": { "type": "string", "description": "Instagram username" },
+        "fbName": { "type": "string", "description": "Facebook account name" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "nip"]
+    },
+    "DailyEngagement": {
+      "title": "Daily Engagement",
+      "description": "Engagement data for a specific date",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "format": "date" },
+        "igRawText": { "type": "string" },
+        "fbRawText": { "type": "string" },
+        "igEngagedEmployeeIds": { 
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "fbEngagedEmployeeIds": { 
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["date", "igEngagedEmployeeIds", "fbEngagedEmployeeIds"]
+    }
+  },
+  "firestore": {
+    "/employees/{employeeId}": {
+      "schema": "Employee",
+      "description": "Collection of employees to be monitored"
+    },
+    "/dailyEngagement/{dateId}": {
+      "schema": "DailyEngagement",
+      "description": "Engagement records indexed by date (YYYY-MM-DD)"
+    }
+  }
+}

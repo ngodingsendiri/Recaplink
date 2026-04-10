@@ -1,0 +1,65 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: employees
+// Document ID: auto-generated
+// Fields:
+//   - name: string (required) - Full name
+//   - nip: string (required) - Employee ID
+//   - igUsername: string (optional) - Instagram handle
+//   - fbName: string (optional) - Facebook name
+//   - createdAt: timestamp - Creation time
+//   - updatedAt: timestamp - Last update time
+//
+// ===============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+             (('email' in request.auth.token && 
+               (request.auth.token.email.lower() == "sipencil@gmail.com" || 
+                request.auth.token.email.lower() == "malespintar@gmail.com")) ||
+              (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+               get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'));
+    }
+
+    match /users/{userId} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow create: if isAuthenticated() && request.auth.uid == userId && 
+                      (!('role' in request.resource.data) || request.resource.data.role == 'user');
+      allow update: if isAuthenticated() && request.auth.uid == userId && 
+                      (!('role' in request.resource.data) || request.resource.data.role == resource.data.role);
+      allow delete: if isAdmin();
+    }
+
+    function isValidEmployee(data) {
+      return data.keys().hasAll(['name', 'nip']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.nip is string && data.nip.size() > 0 && data.nip.size() < 50 &&
+             (!('bidang' in data) || (data.bidang is string && data.bidang.size() < 100)) &&
+             (!('igUsername' in data) || (data.igUsername is string && data.igUsername.size() < 50)) &&
+             (!('fbName' in data) || (data.fbName is string && data.fbName.size() < 100)) &&
+             (!('createdAt' in data) || data.createdAt is timestamp) &&
+             (!('updatedAt' in data) || data.updatedAt is timestamp);
+    }
+
+    match /employees/{employeeId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /dailyEngagement/{dateId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+  }
+}
