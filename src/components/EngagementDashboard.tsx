@@ -8,6 +8,7 @@ import {
   Users2,
   CheckCircle2,
   XCircle,
+  X,
   Calendar as CalendarIcon,
   ClipboardPaste,
   ChevronLeft,
@@ -16,6 +17,8 @@ import {
   Settings,
   Instagram,
   Facebook,
+  Heart,
+  ThumbsUp,
   FileText,
   Image as ImageIcon,
   TrendingUp,
@@ -872,10 +875,20 @@ export default function EngagementDashboard() {
                               const hasIg = engagement?.igEngagedEmployeeIds?.includes(emp.id);
                               const hasFb = engagement?.fbEngagedEmployeeIds?.includes(emp.id);
                               
+                              const hasIgAccount = !!emp.igUsername;
+                              const hasFbAccount = !!emp.fbName;
+                              const isFuture = dateStr > getLocalISODate(new Date());
+                              
                               return (
                                 <TableRow key={emp.id} className="hover:bg-slate-50/30 transition-colors border-b border-slate-50">
                                   <TableCell className="sticky left-0 z-10 bg-white border-r border-slate-100 px-1.5 py-0.5 whitespace-nowrap">
-                                    <p className="font-bold text-slate-800 text-[11px] whitespace-nowrap">{emp.name}</p>
+                                    <div className="flex items-center gap-1.5">
+                                      <p className="font-bold text-slate-800 text-[11px] whitespace-nowrap">{emp.name}</p>
+                                      <div className="flex items-center gap-0.5">
+                                        {hasIgAccount && <Instagram size={10} className="text-pink-500/50" />}
+                                        {hasFbAccount && <Facebook size={10} className="text-blue-500/50" />}
+                                      </div>
+                                    </div>
                                   </TableCell>
                                   <TableCell className="border-r border-slate-100 px-1.5 py-0.5 w-[1%] whitespace-nowrap">
                                     <p className="text-slate-500 text-[11px] font-mono">{emp.nip || '-'}</p>
@@ -887,20 +900,24 @@ export default function EngagementDashboard() {
                                   </TableCell>
                                   <TableCell className="border-r border-slate-50 text-center p-0 w-[1%] whitespace-nowrap">
                                     <div className="flex items-center justify-center py-0.5">
-                                      {hasIg ? (
-                                        <CheckCircle2 size={12} className="text-emerald-500" />
-                                      ) : (
-                                        <XCircle size={12} className="text-red-500" />
-                                      )}
+                                      {hasIgAccount && !isFuture ? (
+                                        hasIg ? (
+                                          <Heart size={14} className="text-pink-500" fill="currentColor" />
+                                        ) : (
+                                          <X size={14} className="text-red-500" strokeWidth={3} />
+                                        )
+                                      ) : null}
                                     </div>
                                   </TableCell>
                                   <TableCell className="text-center p-0 w-[1%] whitespace-nowrap">
                                     <div className="flex items-center justify-center py-0.5">
-                                      {hasFb ? (
-                                        <CheckCircle2 size={12} className="text-emerald-500" />
-                                      ) : (
-                                        <XCircle size={12} className="text-red-500" />
-                                      )}
+                                      {hasFbAccount && !isFuture ? (
+                                        hasFb ? (
+                                          <ThumbsUp size={14} className="text-blue-500" fill="currentColor" />
+                                        ) : (
+                                          <X size={14} className="text-red-500" strokeWidth={3} />
+                                        )
+                                      ) : null}
                                     </div>
                                   </TableCell>
                                 </TableRow>
@@ -1041,21 +1058,28 @@ export default function EngagementDashboard() {
                                   const engagement = dailyEngagements.find(d => d.id === date);
                                   const hasIg = engagement?.igEngagedEmployeeIds?.includes(emp.id);
                                   const hasFb = engagement?.fbEngagedEmployeeIds?.includes(emp.id);
+                                  
+                                  const todayStr = getLocalISODate(new Date());
+                                  const isFuture = date > todayStr;
+                                  const hasIgAccount = !!emp.igUsername;
+                                  const hasFbAccount = !!emp.fbName;
+
                                   return (
                                     <TableCell key={dIdx} className="border-r border-slate-50 text-center px-1.5 py-0 w-[1%] whitespace-nowrap">
                                       <div className="flex items-center justify-center gap-1.5 py-1">
-                                        <div className={cn(
-                                          "w-3.5 h-3.5 rounded-sm flex items-center justify-center transition-all",
-                                          hasIg ? "bg-pink-500 text-white shadow-sm" : "bg-slate-100 text-slate-300 opacity-20"
-                                        )}>
-                                          <Instagram size={8} />
-                                        </div>
-                                        <div className={cn(
-                                          "w-3.5 h-3.5 rounded-sm flex items-center justify-center transition-all",
-                                          hasFb ? "bg-blue-500 text-white shadow-sm" : "bg-slate-100 text-slate-300 opacity-20"
-                                        )}>
-                                          <Facebook size={8} />
-                                        </div>
+                                        {/* Instagram Indicator */}
+                                        {hasIgAccount && !isFuture ? (
+                                          hasIg ? <Instagram size={12} className="text-pink-500" /> : <X size={12} className="text-red-500" strokeWidth={3} />
+                                        ) : (
+                                          <div className="w-3 h-3" />
+                                        )}
+
+                                        {/* Facebook Indicator */}
+                                        {hasFbAccount && !isFuture ? (
+                                          hasFb ? <Facebook size={12} className="text-blue-500" /> : <X size={12} className="text-red-500" strokeWidth={3} />
+                                        ) : (
+                                          <div className="w-3 h-3" />
+                                        )}
                                       </div>
                                     </TableCell>
                                   );
