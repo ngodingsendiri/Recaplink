@@ -22,9 +22,19 @@ service cloud.firestore {
     function isAuthenticated() {
       return request.auth != null;
     }
+
+    function isAuthorized() {
+      let allowedEmails = [
+        'ngerjaindiri@gmail.com',
+        'sipencil@gmail.com',
+        'malespintar@gmail.com',
+        'lareina.adara@gmail.com'
+      ];
+      return isAuthenticated() && request.auth.token.email in allowedEmails;
+    }
     
     function isAdmin() {
-      return isAuthenticated() && 
+      return isAuthorized() && 
              (('email' in request.auth.token && 
                (request.auth.token.email.lower() == "sipencil@gmail.com" || 
                 request.auth.token.email.lower() == "malespintar@gmail.com")) ||
@@ -33,10 +43,10 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read: if isAuthenticated() && request.auth.uid == userId;
-      allow create: if isAuthenticated() && request.auth.uid == userId && 
+      allow read: if isAuthorized() && request.auth.uid == userId;
+      allow create: if isAuthorized() && request.auth.uid == userId && 
                       (!('role' in request.resource.data) || request.resource.data.role == 'user');
-      allow update: if isAuthenticated() && request.auth.uid == userId && 
+      allow update: if isAuthorized() && request.auth.uid == userId && 
                       (!('role' in request.resource.data) || request.resource.data.role == resource.data.role);
       allow delete: if isAdmin();
     }
@@ -53,12 +63,12 @@ service cloud.firestore {
     }
 
     match /employees/{employeeId} {
-      allow read: if isAuthenticated();
+      allow read: if isAuthorized();
       allow create, update, delete: if isAdmin();
     }
 
     match /dailyEngagement/{dateId} {
-      allow read: if isAuthenticated();
+      allow read: if isAuthorized();
       allow write: if isAdmin();
     }
   }
