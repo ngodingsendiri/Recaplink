@@ -78,13 +78,34 @@ export default function EmployeeManager() {
 
   const { user, loading } = useAuth();
 
+  const getBidangColor = (bidang?: string) => {
+    if (!bidang) return "bg-slate-100 text-slate-400";
+    
+    // Specific overrides
+    if (bidang.toLowerCase() === 'infrastruktur') return "bg-slate-200 text-slate-700";
+    if (bidang.toLowerCase() === 'sekretariat') return "bg-white text-slate-900 border border-slate-200";
+
+    const colors = [
+      "bg-pink-100 text-pink-600",
+      "bg-sky-100 text-sky-600",
+      "bg-orange-100 text-orange-600",
+      "bg-emerald-100 text-emerald-600",
+      "bg-slate-100 text-slate-600",
+    ];
+    let hash = 0;
+    for (let i = 0; i < bidang.length; i++) {
+      hash = bidang.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+  };
+
   useEffect(() => {
     if (loading || !user) {
       setEmployees([]);
       return;
     }
 
-    const q = query(collection(db, 'employees'), orderBy('createdAt', 'asc'));
+    const q = query(collection(db, 'employees'), orderBy('name', 'asc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const emps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Employee));
       setEmployees(emps);
@@ -485,20 +506,20 @@ export default function EmployeeManager() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    employees.map((emp) => (
+                    employees.slice().sort((a, b) => a.name.localeCompare(b.name)).map((emp, index) => (
                       <TableRow key={emp.id} className="group hover:bg-slate-50/30 transition-all border-slate-50">
                         <TableCell className="pl-6 py-3">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-xs">
-                              {emp.name.charAt(0)}
+                            <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 font-mono font-bold text-[10px]">
+                              {index + 1}
                             </div>
                             <div className="font-bold text-slate-900 text-sm">{emp.name}</div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="bg-white text-slate-500 border-slate-200 rounded-md px-2 py-0 text-[9px] font-bold uppercase tracking-wider">
+                          <span className={cn("text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase tracking-wider", getBidangColor(emp.bidang))}>
                             {emp.bidang || 'N/A'}
-                          </Badge>
+                          </span>
                         </TableCell>
                         <TableCell>
                           <code className="text-[10px] bg-slate-50 px-2 py-0.5 rounded border border-slate-100 text-slate-500 font-mono">{emp.nip}</code>

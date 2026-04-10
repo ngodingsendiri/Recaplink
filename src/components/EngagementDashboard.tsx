@@ -71,9 +71,33 @@ export default function EngagementDashboard() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [currentWeekDate, setCurrentWeekDate] = useState(new Date());
+  const [currentDailyDate, setCurrentDailyDate] = useState(new Date());
+  const [weeklySortMode, setWeeklySortMode] = useState<'name' | 'bidang'>('bidang');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
+  const printDailyRef = useRef<HTMLDivElement>(null);
+
+  const getBidangColor = (bidang?: string) => {
+    if (!bidang) return "bg-slate-100 text-slate-400";
+    
+    // Specific overrides
+    if (bidang.toLowerCase() === 'infrastruktur') return "bg-slate-200 text-slate-700";
+    if (bidang.toLowerCase() === 'sekretariat') return "bg-white text-slate-900 border border-slate-200";
+
+    const colors = [
+      "bg-pink-100 text-pink-600",
+      "bg-sky-100 text-sky-600",
+      "bg-orange-100 text-orange-600",
+      "bg-emerald-100 text-emerald-600",
+      "bg-slate-100 text-slate-600",
+    ];
+    let hash = 0;
+    for (let i = 0; i < bidang.length; i++) {
+      hash = bidang.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+  };
 
   // Load employees from Firestore
   useEffect(() => {
@@ -117,14 +141,14 @@ export default function EngagementDashboard() {
     }
   }, [selectedDate, dailyEngagements]);
 
-  const handleExportPDF = async () => {
-    if (!printRef.current) return;
+  const handleExportPDF = async (ref: React.RefObject<HTMLDivElement>, filename: string) => {
+    if (!ref.current) return;
     setIsLoading(true);
     setIsExporting(true);
     // Wait for state to apply and DOM to update
     await new Promise(resolve => setTimeout(resolve, 100));
     try {
-      const imgData = await domToPng(printRef.current, {
+      const imgData = await domToPng(ref.current, {
         scale: 2,
         backgroundColor: '#ffffff',
       });
@@ -141,7 +165,7 @@ export default function EngagementDashboard() {
       });
       
       pdf.addImage(imgData, 'PNG', 0, 0, img.width, img.height);
-      pdf.save(`recaplink-report-${new Date().toISOString().split('T')[0]}.pdf`);
+      pdf.save(`${filename}.pdf`);
       toast.success("PDF berhasil diunduh");
     } catch (error) {
       console.error(error);
@@ -152,19 +176,19 @@ export default function EngagementDashboard() {
     }
   };
 
-  const handleExportImage = async () => {
-    if (!printRef.current) return;
+  const handleExportImage = async (ref: React.RefObject<HTMLDivElement>, filename: string) => {
+    if (!ref.current) return;
     setIsLoading(true);
     setIsExporting(true);
     // Wait for state to apply and DOM to update
     await new Promise(resolve => setTimeout(resolve, 100));
     try {
-      const imgData = await domToPng(printRef.current, {
+      const imgData = await domToPng(ref.current, {
         scale: 2,
         backgroundColor: '#ffffff',
       });
       const link = document.createElement('a');
-      link.download = `recaplink-report-${new Date().toISOString().split('T')[0]}.png`;
+      link.download = `${filename}.png`;
       link.href = imgData;
       link.click();
       toast.success("Gambar berhasil disimpan");
@@ -332,6 +356,12 @@ export default function EngagementDashboard() {
     setCurrentWeekDate(newDate);
   };
 
+  const changeDailyDate = (offset: number) => {
+    const newDate = new Date(currentDailyDate);
+    newDate.setDate(newDate.getDate() + offset);
+    setCurrentDailyDate(newDate);
+  };
+
   const changeMonth = (offset: number) => {
     const newMonth = new Date(currentMonth);
     newMonth.setMonth(newMonth.getMonth() + offset);
@@ -389,7 +419,13 @@ export default function EngagementDashboard() {
               active={activeTab === 'overview'} 
               onClick={() => { setActiveTab('overview'); setIsSidebarOpen(false); }} 
               icon={<CalendarIcon size={20} />} 
-              label="Rekap Harian" 
+              label="Input Rekap Harian" 
+            />
+            <NavItem 
+              active={activeTab === 'daily-report'} 
+              onClick={() => { setActiveTab('daily-report'); setIsSidebarOpen(false); }} 
+              icon={<FileText size={20} />} 
+              label="Laporan Harian" 
             />
             <NavItem 
               active={activeTab === 'reports'} 
@@ -443,24 +479,19 @@ export default function EngagementDashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Header */}
-        <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-4 md:px-8 z-20 sticky top-0">
-          <div className="flex items-center gap-3 md:gap-4">
-            <Button variant="ghost" size="icon" className="lg:hidden rounded-xl" onClick={() => setIsSidebarOpen(true)}>
-              <Menu className="text-slate-600" size={24} />
-            </Button>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <Badge variant="outline" className="bg-slate-50 border-slate-100 text-slate-500 font-bold text-[10px] px-3 py-1 rounded-full shadow-sm hidden sm:inline-flex">
-              {employees.length} Pegawai Terdaftar
-            </Badge>
-          </div>
-        </header>
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        {/* Floating Mobile Menu Button */}
+        <Button 
+          variant="outline" 
+          size="icon" 
+          className="fixed top-4 left-4 z-40 lg:hidden bg-white/80 backdrop-blur-md shadow-sm border-slate-200 rounded-xl" 
+          onClick={() => setIsSidebarOpen(true)}
+        >
+          <Menu className="text-slate-600" size={20} />
+        </Button>
 
         <ScrollArea className="flex-1">
-          <div className="p-4 md:p-8 max-w-7xl mx-auto w-full">
+          <div className="p-4 md:p-8 max-w-7xl mx-auto w-full pt-16 lg:pt-8">
             <AnimatePresence mode="wait">
               {activeTab === 'dashboard' && (
                 <motion.div
@@ -727,6 +758,154 @@ export default function EngagementDashboard() {
                   </AnimatePresence>
                 </motion.div>
               )}
+              {activeTab === 'daily-report' && (
+                <motion.div 
+                  key="daily-report"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="space-y-6 md:space-y-8"
+                >
+                  <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                    <div className="space-y-0.5">
+                      <h2 className="text-xl font-bold tracking-tight text-slate-900">Laporan Harian</h2>
+                      <p className="text-slate-500 text-xs">Unduh dan lihat rekapitulasi engagement harian</p>
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
+                      <div className="flex items-center gap-4 bg-slate-50 p-1.5 rounded-xl border border-slate-100 w-full sm:w-auto justify-between">
+                        <Button variant="ghost" size="icon" onClick={() => changeDailyDate(-1)} className="rounded-lg h-8 w-8 text-slate-600 hover:bg-white shrink-0 shadow-sm">
+                          <ChevronLeft size={16} />
+                        </Button>
+                        <div className="text-center px-4 min-w-[200px]">
+                          <div className="flex items-center justify-center gap-2">
+                            <h2 className="text-sm font-bold text-slate-900">
+                              {currentDailyDate.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                            </h2>
+                            {getLocalISODate(currentDailyDate) === getLocalISODate(new Date()) && (
+                              <Badge variant="outline" className="bg-indigo-50 text-indigo-600 border-indigo-200 text-[9px] px-1.5 py-0">Hari Ini</Badge>
+                            )}
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="icon" onClick={() => changeDailyDate(1)} className="rounded-lg h-8 w-8 text-slate-600 hover:bg-white shrink-0 shadow-sm">
+                          <ChevronRight size={16} />
+                        </Button>
+                      </div>
+                      <div className="flex gap-2 w-full sm:w-auto">
+                        <div className="flex bg-slate-100 p-1 rounded-xl mr-2">
+                          <button 
+                            onClick={() => setWeeklySortMode('bidang')}
+                            className={cn("px-3 py-1.5 text-xs font-bold rounded-lg transition-all", weeklySortMode === 'bidang' ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                          >
+                            Bidang
+                          </button>
+                          <button 
+                            onClick={() => setWeeklySortMode('name')}
+                            className={cn("px-3 py-1.5 text-xs font-bold rounded-lg transition-all", weeklySortMode === 'name' ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                          >
+                            Nama
+                          </button>
+                        </div>
+                        <Button onClick={() => handleExportPDF(printDailyRef, `recaplink-harian-${getLocalISODate(currentDailyDate)}`)} disabled={isLoading} className="flex-1 sm:flex-none gap-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-4 h-11 shadow-md font-bold text-xs border-none">
+                          <FileText size={14} />
+                          Export PDF
+                        </Button>
+                        <Button onClick={() => handleExportImage(printDailyRef, `recaplink-harian-${getLocalISODate(currentDailyDate)}`)} disabled={isLoading} variant="outline" className="flex-1 sm:flex-none gap-2 border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl px-4 h-11 font-bold text-xs">
+                          <ImageIcon size={14} />
+                          Save Image
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div ref={printDailyRef} className={cn("bg-white rounded-2xl shadow-sm border border-slate-100 min-h-[600px] flex flex-col", isExporting ? "p-4 md:p-6 w-max min-w-full" : "p-6 md:p-10")}>
+                    <div className={cn("flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-100 gap-2", isExporting ? "mb-3 pb-3" : "mb-8 pb-6")}>
+                      <div className="space-y-0.5">
+                        <h3 className={cn("font-black text-slate-900 tracking-tight uppercase", isExporting ? "text-lg" : "text-2xl")}>Laporan Harian</h3>
+                        <p className={cn("font-bold text-slate-500 uppercase tracking-widest", isExporting ? "text-[10px]" : "text-sm")}>Rekapitulasi Engagement • {currentDailyDate.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                      </div>
+                      <div className={cn("text-left md:text-right bg-slate-50 rounded-xl border border-slate-100", isExporting ? "p-2" : "p-3")}>
+                        <p className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">RecapLink</p>
+                        <p className="text-[8px] text-slate-500">Generated: {new Date().toLocaleDateString('id-ID')}</p>
+                      </div>
+                    </div>
+
+                    <div className={cn("flex-1 rounded-xl border border-slate-100", !isExporting && "overflow-auto max-h-[600px]")}>
+                      <div className="min-w-[600px]">
+                        <Table className="border-collapse min-w-full">
+                          <TableHeader>
+                            <TableRow className="bg-slate-50/50 border-b border-slate-100">
+                              <TableHead className="sticky left-0 z-20 bg-slate-50 border-r border-slate-100 px-3 py-2 font-bold text-slate-900 w-[1%] whitespace-nowrap text-[10px] uppercase tracking-wider">
+                                Nama Pegawai
+                              </TableHead>
+                              <TableHead className="border-r border-slate-100 px-3 py-2 font-bold text-slate-900 w-[1%] whitespace-nowrap text-[10px] uppercase tracking-wider">
+                                NIP
+                              </TableHead>
+                              <TableHead className="border-r border-slate-100 px-3 py-2 font-bold text-slate-900 w-[1%] whitespace-nowrap text-[10px] uppercase tracking-wider">
+                                Bidang
+                              </TableHead>
+                              <TableHead className="border-r border-slate-100 text-center px-3 py-2 text-[10px] font-bold text-slate-900 uppercase tracking-wider">
+                                Instagram
+                              </TableHead>
+                              <TableHead className="text-center px-3 py-2 text-[10px] font-bold text-slate-900 uppercase tracking-wider">
+                                Facebook
+                              </TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {employees.slice().sort((a, b) => {
+                              if (weeklySortMode === 'name') {
+                                return a.name.localeCompare(b.name);
+                              }
+                              return (a.bidang || '').localeCompare(b.bidang || '') || a.name.localeCompare(b.name);
+                            }).map((emp) => {
+                              const dateStr = getLocalISODate(currentDailyDate);
+                              const engagement = dailyEngagements.find(d => d.id === dateStr);
+                              const hasIg = engagement?.igEngagedEmployeeIds?.includes(emp.id);
+                              const hasFb = engagement?.fbEngagedEmployeeIds?.includes(emp.id);
+                              
+                              return (
+                                <TableRow key={emp.id} className="hover:bg-slate-50/30 transition-colors border-b border-slate-50">
+                                  <TableCell className="sticky left-0 z-10 bg-white border-r border-slate-100 px-3 py-2 w-[1%] whitespace-nowrap">
+                                    <p className="font-bold text-slate-800 text-xs whitespace-nowrap">{emp.name}</p>
+                                  </TableCell>
+                                  <TableCell className="border-r border-slate-100 px-3 py-2 w-[1%] whitespace-nowrap">
+                                    <p className="text-slate-500 text-xs font-mono">{emp.nip || '-'}</p>
+                                  </TableCell>
+                                  <TableCell className="border-r border-slate-100 px-3 py-2 w-[1%] whitespace-nowrap">
+                                    <span className={cn("text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase tracking-wider", getBidangColor(emp.bidang))}>
+                                      {emp.bidang || '---'}
+                                    </span>
+                                  </TableCell>
+                                  <TableCell className="border-r border-slate-50 text-center p-0">
+                                    <div className="flex items-center justify-center py-2">
+                                      {hasIg ? (
+                                        <CheckCircle2 size={16} className="text-emerald-500" />
+                                      ) : (
+                                        <XCircle size={16} className="text-slate-200" />
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-center p-0">
+                                    <div className="flex items-center justify-center py-2">
+                                      {hasFb ? (
+                                        <CheckCircle2 size={16} className="text-emerald-500" />
+                                      ) : (
+                                        <XCircle size={16} className="text-slate-200" />
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
                {activeTab === 'reports' && (
                 <motion.div 
                   key="reports"
@@ -760,11 +939,25 @@ export default function EngagementDashboard() {
                         </Button>
                       </div>
                       <div className="flex gap-2 w-full sm:w-auto">
-                        <Button onClick={handleExportPDF} disabled={isLoading} className="flex-1 sm:flex-none gap-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-4 h-11 shadow-md font-bold text-xs border-none">
+                        <div className="flex bg-slate-100 p-1 rounded-xl mr-2">
+                          <button 
+                            onClick={() => setWeeklySortMode('bidang')}
+                            className={cn("px-3 py-1.5 text-xs font-bold rounded-lg transition-all", weeklySortMode === 'bidang' ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                          >
+                            Bidang
+                          </button>
+                          <button 
+                            onClick={() => setWeeklySortMode('name')}
+                            className={cn("px-3 py-1.5 text-xs font-bold rounded-lg transition-all", weeklySortMode === 'name' ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                          >
+                            Nama
+                          </button>
+                        </div>
+                        <Button onClick={() => handleExportPDF(printRef, `recaplink-mingguan-${new Date().toISOString().split('T')[0]}`)} disabled={isLoading} className="flex-1 sm:flex-none gap-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-4 h-11 shadow-md font-bold text-xs border-none">
                           <FileText size={14} />
                           Export PDF
                         </Button>
-                        <Button onClick={handleExportImage} disabled={isLoading} variant="outline" className="flex-1 sm:flex-none gap-2 border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl px-4 h-11 font-bold text-xs">
+                        <Button onClick={() => handleExportImage(printRef, `recaplink-mingguan-${new Date().toISOString().split('T')[0]}`)} disabled={isLoading} variant="outline" className="flex-1 sm:flex-none gap-2 border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl px-4 h-11 font-bold text-xs">
                           <ImageIcon size={14} />
                           Save Image
                         </Button>
@@ -807,11 +1000,16 @@ export default function EngagementDashboard() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {employees.slice().sort((a, b) => (a.bidang || '').localeCompare(b.bidang || '') || a.name.localeCompare(b.name)).map((emp) => (
+                            {employees.slice().sort((a, b) => {
+                              if (weeklySortMode === 'name') {
+                                return a.name.localeCompare(b.name);
+                              }
+                              return (a.bidang || '').localeCompare(b.bidang || '') || a.name.localeCompare(b.name);
+                            }).map((emp) => (
                               <TableRow key={emp.id} className="hover:bg-slate-50/30 transition-colors border-b border-slate-50">
                                 <TableCell className="sticky left-0 z-10 bg-white border-r border-slate-100 px-2 py-1 w-[1%] whitespace-nowrap">
                                   <div className="flex items-center gap-2">
-                                    <span className="text-[9px] font-mono font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0">
+                                    <span className={cn("text-[9px] font-mono font-bold px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0", getBidangColor(emp.bidang))}>
                                       {emp.bidang ? emp.bidang.substring(0, 3) : '---'}
                                     </span>
                                     <p className="font-bold text-slate-800 text-xs whitespace-nowrap shrink-0">{emp.name}</p>
