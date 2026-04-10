@@ -49,7 +49,7 @@ import {
   ResponsiveContainer,
   Cell
 } from 'recharts';
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import { domToPng } from 'modern-screenshot';
 
 const getLocalISODate = (date: Date) => {
@@ -379,7 +379,7 @@ export default function EngagementDashboard() {
   };
 
   return (
-    <div className="flex h-screen bg-[#fafafa] font-sans overflow-hidden">
+    <div className="flex h-[100dvh] bg-[#fafafa] font-sans overflow-hidden">
       {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {isSidebarOpen && (
@@ -496,7 +496,7 @@ export default function EngagementDashboard() {
           <Menu className="text-slate-600" size={20} />
         </Button>
 
-        <ScrollArea className="flex-1">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">
           <div className="p-4 md:p-8 max-w-7xl mx-auto w-full pt-16 lg:pt-8">
             <AnimatePresence mode="wait">
               {activeTab === 'dashboard' && (
@@ -514,7 +514,7 @@ export default function EngagementDashboard() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                     <StatCard 
                       title="Total Pegawai" 
                       value={stats.totalEmployees.toString()} 
@@ -635,9 +635,9 @@ export default function EngagementDashboard() {
                     </div>
                   </div>
 
-                  <div className="bg-white rounded-2xl p-6 md:p-10 shadow-sm border border-slate-100">
-                    <div className="flex justify-end mb-6">
-                      <div className="flex gap-4 md:gap-6 text-[10px] font-bold uppercase tracking-widest text-slate-400 bg-slate-50/50 px-4 md:px-6 py-3 rounded-2xl border border-slate-100 w-full md:w-auto justify-center">
+                  <div className="bg-white rounded-2xl p-4 sm:p-6 md:p-10 shadow-sm border border-slate-100">
+                    <div className="flex justify-end mb-4 md:mb-6">
+                      <div className="flex gap-3 md:gap-6 text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-slate-400 bg-slate-50/50 px-3 md:px-6 py-2 md:py-3 rounded-2xl border border-slate-100 w-full md:w-auto justify-center">
                         <div className="flex items-center gap-2">
                           <div className="w-2.5 h-2.5 rounded-full bg-slate-900 shadow-sm" /> Terisi
                         </div>
@@ -647,8 +647,8 @@ export default function EngagementDashboard() {
                       </div>
                     </div>
 
-                    <div className="overflow-auto max-h-[500px] pb-4">
-                      <div className="min-w-[500px]">
+                    <div className="overflow-auto max-h-[60vh] md:max-h-[500px] pb-4">
+                      <div className="min-w-[280px] sm:min-w-[500px]">
                         <div className="grid grid-cols-7 gap-1 sm:gap-2 md:gap-3">
                           {['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].map(day => (
                             <div key={day} className="text-center py-1 md:py-2 text-[8px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest">
@@ -712,7 +712,7 @@ export default function EngagementDashboard() {
                           </div>
                           
                           <div className="p-6 space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                               <div className="space-y-2">
                                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                                   <Instagram size={12} className="text-pink-500" />
@@ -722,7 +722,7 @@ export default function EngagementDashboard() {
                                   value={igRawInput}
                                   onChange={(e) => setIgRawInput(e.target.value)}
                                   placeholder="Paste list nama atau username di sini..."
-                                  className="w-full h-40 p-4 rounded-xl border border-slate-200 bg-slate-50/30 focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all text-sm resize-none"
+                                  className="w-full h-32 md:h-40 p-3 md:p-4 rounded-xl border border-slate-200 bg-slate-50/30 focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all text-sm resize-none"
                                 />
                               </div>
                               <div className="space-y-2">
@@ -734,7 +734,7 @@ export default function EngagementDashboard() {
                                   value={fbRawInput}
                                   onChange={(e) => setFbRawInput(e.target.value)}
                                   placeholder="Paste list nama atau username di sini..."
-                                  className="w-full h-40 p-4 rounded-xl border border-slate-200 bg-slate-50/30 focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all text-sm resize-none"
+                                  className="w-full h-32 md:h-40 p-3 md:p-4 rounded-xl border border-slate-200 bg-slate-50/30 focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all text-sm resize-none"
                                 />
                               </div>
                             </div>
@@ -772,20 +772,20 @@ export default function EngagementDashboard() {
                   exit={{ opacity: 0, y: -10 }}
                   className="space-y-6 md:space-y-8"
                 >
-                  <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                  <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100">
                     <div className="space-y-0.5">
                       <h2 className="text-xl font-bold tracking-tight text-slate-900">Laporan Harian</h2>
                       <p className="text-slate-500 text-xs">Unduh dan lihat rekapitulasi engagement harian</p>
                     </div>
                     
-                    <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
-                      <div className="flex items-center gap-4 bg-slate-50 p-1.5 rounded-xl border border-slate-100 w-full sm:w-auto justify-between">
+                    <div className="flex flex-col xl:flex-row items-start xl:items-center gap-4 w-full lg:w-auto">
+                      <div className="flex items-center gap-2 md:gap-4 bg-slate-50 p-1.5 rounded-xl border border-slate-100 w-full xl:w-auto justify-between">
                         <Button variant="ghost" size="icon" onClick={() => changeDailyDate(-1)} className="rounded-lg h-8 w-8 text-slate-600 hover:bg-white shrink-0 shadow-sm">
                           <ChevronLeft size={16} />
                         </Button>
-                        <div className="text-center px-4 min-w-[200px]">
-                          <div className="flex items-center justify-center gap-2">
-                            <h2 className="text-sm font-bold text-slate-900">
+                        <div className="text-center px-2 md:px-4 min-w-[160px] md:min-w-[200px]">
+                          <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2">
+                            <h2 className="text-xs sm:text-sm font-bold text-slate-900">
                               {currentDailyDate.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                             </h2>
                             {getLocalISODate(currentDailyDate) === getLocalISODate(new Date()) && (
@@ -797,34 +797,36 @@ export default function EngagementDashboard() {
                           <ChevronRight size={16} />
                         </Button>
                       </div>
-                      <div className="flex gap-2 w-full sm:w-auto">
-                        <div className="flex bg-slate-100 p-1 rounded-xl mr-2">
+                      <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-auto">
+                        <div className="flex bg-slate-100 p-1 rounded-xl w-full sm:w-auto justify-center sm:justify-start">
                           <button 
                             onClick={() => setWeeklySortMode('bidang')}
-                            className={cn("px-3 py-1.5 text-xs font-bold rounded-lg transition-all", weeklySortMode === 'bidang' ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                            className={cn("flex-1 sm:flex-none px-3 py-1.5 text-xs font-bold rounded-lg transition-all", weeklySortMode === 'bidang' ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700")}
                           >
                             Bidang
                           </button>
                           <button 
                             onClick={() => setWeeklySortMode('name')}
-                            className={cn("px-3 py-1.5 text-xs font-bold rounded-lg transition-all", weeklySortMode === 'name' ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                            className={cn("flex-1 sm:flex-none px-3 py-1.5 text-xs font-bold rounded-lg transition-all", weeklySortMode === 'name' ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700")}
                           >
                             Nama
                           </button>
                         </div>
-                        <Button onClick={() => handleExportPDF(printDailyRef, `recaplink-harian-${getLocalISODate(currentDailyDate)}`)} disabled={isLoading} className="flex-1 sm:flex-none gap-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-4 h-11 shadow-md font-bold text-xs border-none">
-                          <FileText size={14} />
-                          Export PDF
-                        </Button>
-                        <Button onClick={() => handleExportImage(printDailyRef, `recaplink-harian-${getLocalISODate(currentDailyDate)}`)} disabled={isLoading} variant="outline" className="flex-1 sm:flex-none gap-2 border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl px-4 h-11 font-bold text-xs">
-                          <ImageIcon size={14} />
-                          Save Image
-                        </Button>
+                        <div className="flex gap-2 w-full sm:w-auto">
+                          <Button onClick={() => handleExportPDF(printDailyRef, `recaplink-harian-${getLocalISODate(currentDailyDate)}`)} disabled={isLoading} className="flex-1 sm:flex-none gap-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-4 h-11 shadow-md font-bold text-xs border-none">
+                            <FileText size={14} />
+                            Export PDF
+                          </Button>
+                          <Button onClick={() => handleExportImage(printDailyRef, `recaplink-harian-${getLocalISODate(currentDailyDate)}`)} disabled={isLoading} variant="outline" className="flex-1 sm:flex-none gap-2 border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl px-4 h-11 font-bold text-xs">
+                            <ImageIcon size={14} />
+                            Save Image
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <div ref={printDailyRef} className={cn("bg-white rounded-2xl shadow-sm border border-slate-100 min-h-[600px] flex flex-col", isExporting ? "p-4 md:p-6 w-max min-w-full" : "p-6 md:p-10")}>
+                  <div ref={printDailyRef} className={cn("bg-white rounded-2xl shadow-sm border border-slate-100 min-h-[400px] md:min-h-[600px] flex flex-col", isExporting ? "p-4 md:p-6 w-max" : "p-4 sm:p-6 md:p-10")}>
                     <div className={cn("flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-100 gap-2", isExporting ? "mb-3 pb-3" : "mb-8 pb-6")}>
                       <div className="space-y-0.5">
                         <h3 className={cn("font-black text-slate-900 tracking-tight uppercase", isExporting ? "text-lg" : "text-2xl")}>Laporan Harian</h3>
@@ -836,24 +838,24 @@ export default function EngagementDashboard() {
                       </div>
                     </div>
 
-                    <div className={cn("flex-1 rounded-xl border border-slate-100", !isExporting && "overflow-auto max-h-[600px]")}>
-                      <div className="min-w-[600px]">
-                        <Table className="border-collapse min-w-full">
+                    <div className={cn("flex-1 rounded-xl border border-slate-100", !isExporting && "overflow-auto max-h-[60vh] md:max-h-[600px]")}>
+                      <div className="min-w-max">
+                        <Table className={cn("border-collapse", isExporting ? "w-max" : "w-full")}>
                           <TableHeader>
                             <TableRow className="bg-slate-50/50 border-b border-slate-100">
-                              <TableHead className="sticky left-0 z-20 bg-slate-50 border-r border-slate-100 px-3 py-2 font-bold text-slate-900 w-[1%] whitespace-nowrap text-[10px] uppercase tracking-wider">
+                              <TableHead className="sticky left-0 z-20 bg-slate-50 border-r border-slate-100 px-1.5 py-1 font-bold text-slate-900 whitespace-nowrap text-[10px] uppercase tracking-wider h-auto">
                                 Nama Pegawai
                               </TableHead>
-                              <TableHead className="border-r border-slate-100 px-3 py-2 font-bold text-slate-900 w-[1%] whitespace-nowrap text-[10px] uppercase tracking-wider">
+                              <TableHead className="border-r border-slate-100 px-1.5 py-1 font-bold text-slate-900 w-[1%] whitespace-nowrap text-[10px] uppercase tracking-wider h-auto">
                                 NIP
                               </TableHead>
-                              <TableHead className="border-r border-slate-100 px-3 py-2 font-bold text-slate-900 w-[1%] whitespace-nowrap text-[10px] uppercase tracking-wider">
+                              <TableHead className="border-r border-slate-100 px-1.5 py-1 font-bold text-slate-900 w-[1%] whitespace-nowrap text-[10px] uppercase tracking-wider h-auto">
                                 Bidang
                               </TableHead>
-                              <TableHead className="border-r border-slate-100 text-center px-3 py-2 text-[10px] font-bold text-slate-900 uppercase tracking-wider">
+                              <TableHead className="border-r border-slate-100 text-center px-1.5 py-1 text-[10px] font-bold text-slate-900 uppercase tracking-wider h-auto w-[1%] whitespace-nowrap">
                                 Instagram
                               </TableHead>
-                              <TableHead className="text-center px-3 py-2 text-[10px] font-bold text-slate-900 uppercase tracking-wider">
+                              <TableHead className="text-center px-1.5 py-1 text-[10px] font-bold text-slate-900 uppercase tracking-wider h-auto w-[1%] whitespace-nowrap">
                                 Facebook
                               </TableHead>
                             </TableRow>
@@ -872,32 +874,32 @@ export default function EngagementDashboard() {
                               
                               return (
                                 <TableRow key={emp.id} className="hover:bg-slate-50/30 transition-colors border-b border-slate-50">
-                                  <TableCell className="sticky left-0 z-10 bg-white border-r border-slate-100 px-3 py-2 w-[1%] whitespace-nowrap">
-                                    <p className="font-bold text-slate-800 text-xs whitespace-nowrap">{emp.name}</p>
+                                  <TableCell className="sticky left-0 z-10 bg-white border-r border-slate-100 px-1.5 py-0.5 whitespace-nowrap">
+                                    <p className="font-bold text-slate-800 text-[11px] whitespace-nowrap">{emp.name}</p>
                                   </TableCell>
-                                  <TableCell className="border-r border-slate-100 px-3 py-2 w-[1%] whitespace-nowrap">
-                                    <p className="text-slate-500 text-xs font-mono">{emp.nip || '-'}</p>
+                                  <TableCell className="border-r border-slate-100 px-1.5 py-0.5 w-[1%] whitespace-nowrap">
+                                    <p className="text-slate-500 text-[11px] font-mono">{emp.nip || '-'}</p>
                                   </TableCell>
-                                  <TableCell className="border-r border-slate-100 px-3 py-2 w-[1%] whitespace-nowrap">
-                                    <span className={cn("text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase tracking-wider", getBidangColor(emp.bidang))}>
+                                  <TableCell className="border-r border-slate-100 px-1.5 py-0.5 w-[1%] whitespace-nowrap">
+                                    <span className={cn("text-[9px] font-mono font-bold px-1 py-0 rounded uppercase tracking-wider", getBidangColor(emp.bidang))}>
                                       {emp.bidang || '---'}
                                     </span>
                                   </TableCell>
-                                  <TableCell className="border-r border-slate-50 text-center p-0">
-                                    <div className="flex items-center justify-center py-2">
+                                  <TableCell className="border-r border-slate-50 text-center p-0 w-[1%] whitespace-nowrap">
+                                    <div className="flex items-center justify-center py-0.5">
                                       {hasIg ? (
-                                        <CheckCircle2 size={16} className="text-emerald-500" />
+                                        <CheckCircle2 size={12} className="text-emerald-500" />
                                       ) : (
-                                        <XCircle size={16} className="text-slate-200" />
+                                        <XCircle size={12} className="text-red-500" />
                                       )}
                                     </div>
                                   </TableCell>
-                                  <TableCell className="text-center p-0">
-                                    <div className="flex items-center justify-center py-2">
+                                  <TableCell className="text-center p-0 w-[1%] whitespace-nowrap">
+                                    <div className="flex items-center justify-center py-0.5">
                                       {hasFb ? (
-                                        <CheckCircle2 size={16} className="text-emerald-500" />
+                                        <CheckCircle2 size={12} className="text-emerald-500" />
                                       ) : (
-                                        <XCircle size={16} className="text-slate-200" />
+                                        <XCircle size={12} className="text-red-500" />
                                       )}
                                     </div>
                                   </TableCell>
@@ -920,58 +922,60 @@ export default function EngagementDashboard() {
                   exit={{ opacity: 0, y: -10 }}
                   className="space-y-6 md:space-y-8"
                 >
-                  <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                  <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100">
                     <div className="space-y-0.5">
                       <h2 className="text-xl font-bold tracking-tight text-slate-900">Laporan Mingguan</h2>
                       <p className="text-slate-500 text-xs">Unduh dan lihat rekapitulasi engagement mingguan</p>
                     </div>
                     
-                    <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
-                      <div className="flex items-center gap-4 bg-slate-50 p-1.5 rounded-xl border border-slate-100 w-full sm:w-auto justify-between">
+                    <div className="flex flex-col xl:flex-row items-start xl:items-center gap-4 w-full lg:w-auto">
+                      <div className="flex items-center gap-2 md:gap-4 bg-slate-50 p-1.5 rounded-xl border border-slate-100 w-full xl:w-auto justify-between">
                         <Button variant="ghost" size="icon" onClick={() => changeWeek(-1)} className="rounded-lg h-8 w-8 text-slate-600 hover:bg-white shrink-0 shadow-sm">
                           <ChevronLeft size={16} />
                         </Button>
-                        <div className="text-center px-4 min-w-[200px]">
-                          <div className="flex items-center justify-center gap-2">
-                            <h2 className="text-sm font-bold text-slate-900">Minggu ke-{weeklyReports[0]?.weekNumber}</h2>
+                        <div className="text-center px-2 md:px-4 min-w-[160px] md:min-w-[200px]">
+                          <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2">
+                            <h2 className="text-xs sm:text-sm font-bold text-slate-900">Minggu ke-{weeklyReports[0]?.weekNumber}</h2>
                             {weeklyReports[0]?.isCurrentWeek && (
                               <Badge variant="outline" className="bg-indigo-50 text-indigo-600 border-indigo-200 text-[9px] px-1.5 py-0">Sekarang</Badge>
                             )}
                           </div>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{weeklyReports[0]?.monthName} {weeklyReports[0]?.year}</p>
+                          <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{weeklyReports[0]?.monthName} {weeklyReports[0]?.year}</p>
                         </div>
                         <Button variant="ghost" size="icon" onClick={() => changeWeek(1)} className="rounded-lg h-8 w-8 text-slate-600 hover:bg-white shrink-0 shadow-sm">
                           <ChevronRight size={16} />
                         </Button>
                       </div>
-                      <div className="flex gap-2 w-full sm:w-auto">
-                        <div className="flex bg-slate-100 p-1 rounded-xl mr-2">
+                      <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-auto">
+                        <div className="flex bg-slate-100 p-1 rounded-xl w-full sm:w-auto justify-center sm:justify-start">
                           <button 
                             onClick={() => setWeeklySortMode('bidang')}
-                            className={cn("px-3 py-1.5 text-xs font-bold rounded-lg transition-all", weeklySortMode === 'bidang' ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                            className={cn("flex-1 sm:flex-none px-3 py-1.5 text-xs font-bold rounded-lg transition-all", weeklySortMode === 'bidang' ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700")}
                           >
                             Bidang
                           </button>
                           <button 
                             onClick={() => setWeeklySortMode('name')}
-                            className={cn("px-3 py-1.5 text-xs font-bold rounded-lg transition-all", weeklySortMode === 'name' ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                            className={cn("flex-1 sm:flex-none px-3 py-1.5 text-xs font-bold rounded-lg transition-all", weeklySortMode === 'name' ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700")}
                           >
                             Nama
                           </button>
                         </div>
-                        <Button onClick={() => handleExportPDF(printRef, `recaplink-mingguan-${new Date().toISOString().split('T')[0]}`)} disabled={isLoading} className="flex-1 sm:flex-none gap-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-4 h-11 shadow-md font-bold text-xs border-none">
-                          <FileText size={14} />
-                          Export PDF
-                        </Button>
-                        <Button onClick={() => handleExportImage(printRef, `recaplink-mingguan-${new Date().toISOString().split('T')[0]}`)} disabled={isLoading} variant="outline" className="flex-1 sm:flex-none gap-2 border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl px-4 h-11 font-bold text-xs">
-                          <ImageIcon size={14} />
-                          Save Image
-                        </Button>
+                        <div className="flex gap-2 w-full sm:w-auto">
+                          <Button onClick={() => handleExportPDF(printRef, `recaplink-mingguan-${new Date().toISOString().split('T')[0]}`)} disabled={isLoading} className="flex-1 sm:flex-none gap-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-4 h-11 shadow-md font-bold text-xs border-none">
+                            <FileText size={14} />
+                            Export PDF
+                          </Button>
+                          <Button onClick={() => handleExportImage(printRef, `recaplink-mingguan-${new Date().toISOString().split('T')[0]}`)} disabled={isLoading} variant="outline" className="flex-1 sm:flex-none gap-2 border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl px-4 h-11 font-bold text-xs">
+                            <ImageIcon size={14} />
+                            Save Image
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <div ref={printRef} className={cn("bg-white rounded-2xl shadow-sm border border-slate-100 min-h-[600px] flex flex-col", isExporting ? "p-4 md:p-6 w-max min-w-full" : "p-6 md:p-10")}>
+                  <div ref={printRef} className={cn("bg-white rounded-2xl shadow-sm border border-slate-100 min-h-[400px] md:min-h-[600px] flex flex-col", isExporting ? "p-4 md:p-6 w-max" : "p-4 sm:p-6 md:p-10")}>
                     <div className={cn("flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-100 gap-2", isExporting ? "mb-3 pb-3" : "mb-8 pb-6")}>
                       <div className="space-y-0.5">
                         <h3 className={cn("font-black text-slate-900 tracking-tight uppercase", isExporting ? "text-lg" : "text-2xl")}>Laporan Mingguan</h3>
@@ -983,17 +987,17 @@ export default function EngagementDashboard() {
                       </div>
                     </div>
 
-                    <div className={cn("flex-1 rounded-xl border border-slate-100", !isExporting && "overflow-auto max-h-[600px]")}>
-                      <div className="min-w-[800px]">
-                        <Table className="border-collapse min-w-full">
+                    <div className={cn("flex-1 rounded-xl border border-slate-100", !isExporting && "overflow-auto max-h-[60vh] md:max-h-[600px]")}>
+                      <div className="min-w-max">
+                        <Table id="engagement-table" className={cn("border-collapse", isExporting ? "w-max" : "w-full")}>
                           <TableHeader>
                             <TableRow className="bg-slate-50/50 border-b border-slate-100">
-                              <TableHead className="sticky left-0 z-20 bg-slate-50 border-r border-slate-100 px-3 py-2 font-bold text-slate-900 w-[1%] whitespace-nowrap text-[10px] uppercase tracking-wider">
+                              <TableHead className="sticky left-0 z-20 bg-slate-50 border-r border-slate-100 px-3 py-2 font-bold text-slate-900 whitespace-nowrap text-[10px] uppercase tracking-wider">
                                 Nama Pegawai
                               </TableHead>
                               {weeklyReports.flatMap(w => w.dates).map((date, dIdx) => (
                                 <TableHead key={dIdx} className={cn(
-                                  "border-r border-slate-100 text-center px-1 py-2 text-[10px] font-bold",
+                                  "border-r border-slate-100 text-center px-2 py-2 text-[10px] font-bold w-[1%] whitespace-nowrap",
                                   date === getLocalISODate(new Date()) ? "text-slate-900 bg-slate-100/50" : "text-slate-400"
                                 )}>
                                   <div className="flex flex-col items-center">
@@ -1038,8 +1042,8 @@ export default function EngagementDashboard() {
                                   const hasIg = engagement?.igEngagedEmployeeIds?.includes(emp.id);
                                   const hasFb = engagement?.fbEngagedEmployeeIds?.includes(emp.id);
                                   return (
-                                    <TableCell key={dIdx} className="border-r border-slate-50 text-center p-0">
-                                      <div className="flex items-center justify-center gap-0.5 py-0.5">
+                                    <TableCell key={dIdx} className="border-r border-slate-50 text-center px-1.5 py-0 w-[1%] whitespace-nowrap">
+                                      <div className="flex items-center justify-center gap-1.5 py-1">
                                         <div className={cn(
                                           "w-3.5 h-3.5 rounded-sm flex items-center justify-center transition-all",
                                           hasIg ? "bg-pink-500 text-white shadow-sm" : "bg-slate-100 text-slate-300 opacity-20"
@@ -1099,7 +1103,7 @@ export default function EngagementDashboard() {
             )}
           </AnimatePresence>
         </div>
-      </ScrollArea>
+      </div>
     </main>
       <Toaster position="top-right" />
     </div>
