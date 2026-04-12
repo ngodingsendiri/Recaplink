@@ -370,6 +370,35 @@ export default function EngagementDashboard() {
     }];
   }, [employees, currentWeekDate]);
 
+  const weeklyStats = useMemo(() => {
+    if (weeklyReports.length === 0) return { employeeTotals: {} as Record<string, number>, daysPassed: 1 };
+    
+    const weekDates = weeklyReports[0].dates;
+    const todayStr = getLocalISODate(new Date());
+    
+    let daysPassed = 0;
+    weekDates.forEach(date => {
+      if (date <= todayStr) daysPassed++;
+    });
+    if (daysPassed === 0) daysPassed = 1; // Prevent division by zero
+    
+    const employeeTotals: Record<string, number> = {};
+
+    employees.forEach(emp => {
+      let engagedDays = 0;
+      weekDates.forEach(date => {
+        if (date > todayStr) return;
+        const engagement = dailyEngagements.find(d => d.id === date);
+        const hasIg = engagement?.igEngagedEmployeeIds?.includes(emp.id);
+        const hasFb = engagement?.fbEngagedEmployeeIds?.includes(emp.id);
+        if (hasIg || hasFb) engagedDays++;
+      });
+      employeeTotals[emp.id] = engagedDays;
+    });
+
+    return { employeeTotals, daysPassed };
+  }, [weeklyReports, employees, dailyEngagements]);
+
   const changeWeek = (offset: number) => {
     const newDate = new Date(currentWeekDate);
     newDate.setDate(newDate.getDate() + (offset * 7));
@@ -1138,6 +1167,9 @@ export default function EngagementDashboard() {
                                   </div>
                                 </TableHead>
                               ))}
+                              <TableHead className="border-l border-slate-100 text-center px-3 py-2 text-[10px] font-bold text-slate-900 bg-slate-50 uppercase tracking-wider w-[1%] whitespace-nowrap">
+                                % ENG
+                              </TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -1198,6 +1230,13 @@ export default function EngagementDashboard() {
                                     </TableCell>
                                   );
                                 })}
+                                <TableCell className="border-l border-slate-100 bg-slate-50/30 text-center px-3 py-1 w-[1%] whitespace-nowrap">
+                                  <div className="flex flex-col items-center justify-center">
+                                    <span className="text-slate-600 text-xs font-medium">
+                                      {Math.round(((weeklyStats.employeeTotals[emp.id] || 0) / weeklyStats.daysPassed) * 100)}%
+                                    </span>
+                                  </div>
+                                </TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
