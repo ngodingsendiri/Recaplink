@@ -23,7 +23,10 @@ import {
   Image as ImageIcon,
   TrendingUp,
   Activity,
-  Menu
+  Menu,
+  Link as LinkIcon,
+  RefreshCw,
+  ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from './ui/button';
@@ -69,6 +72,8 @@ export default function EngagementDashboard() {
   const [selectedDate, setSelectedDate] = useState(getLocalISODate(new Date()));
   const [igRawInput, setIgRawInput] = useState('');
   const [fbRawInput, setFbRawInput] = useState('');
+  const [igLinks, setIgLinks] = useState<string[]>([]);
+  const [fbLinks, setFbLinks] = useState<string[]>([]);
   const [isInputModalOpen, setIsInputModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -132,15 +137,19 @@ export default function EngagementDashboard() {
     return unsubscribe;
   }, [user, loading]);
 
-  // Load raw text for selected date if exists
+  // Load raw text and links for selected date if exists
   useEffect(() => {
     const existing = dailyEngagements.find(d => d.id === selectedDate);
     if (existing) {
       setIgRawInput(existing.igRawText || '');
       setFbRawInput(existing.fbRawText || '');
+      setIgLinks(existing.igLinks || []);
+      setFbLinks(existing.fbLinks || []);
     } else {
       setIgRawInput('');
       setFbRawInput('');
+      setIgLinks([]);
+      setFbLinks([]);
     }
   }, [selectedDate, dailyEngagements]);
 
@@ -276,6 +285,8 @@ export default function EngagementDashboard() {
         fbRawText: fbRawInput,
         igEngagedEmployeeIds: igEngagedIds,
         fbEngagedEmployeeIds: fbEngagedIds,
+        igLinks: igLinks,
+        fbLinks: fbLinks,
         updatedAt: serverTimestamp()
       });
 
@@ -715,6 +726,109 @@ export default function EngagementDashboard() {
                           </div>
                           
                           <div className="p-6 space-y-6">
+                            {/* Meta Links Section */}
+                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-4">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <LinkIcon size={16} className="text-slate-400" />
+                                  <h4 className="text-sm font-bold text-slate-700">Link Postingan Hari Ini</h4>
+                                </div>
+                              </div>
+                              
+                              <div className="space-y-3">
+                                {/* Smart Link Input */}
+                                <div>
+                                  <textarea
+                                    placeholder="Paste banyak link IG/FB sekaligus di sini (pisahkan dengan spasi atau enter)..."
+                                    className="w-full h-16 p-2 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all text-xs resize-none"
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        const val = e.currentTarget.value;
+                                        if (val) {
+                                          const urls = val.split(/[\s,\n]+/).filter(url => url.trim() !== '');
+                                          const newIg = [...igLinks];
+                                          const newFb = [...fbLinks];
+                                          urls.forEach(rawUrl => {
+                                            let url = rawUrl;
+                                            if (url.includes('instagram.com')) {
+                                              // Ubah format reel IG menjadi format post biasa (/p/)
+                                              url = url.replace(/\/(?:reel|reels)\//i, '/p/');
+                                              if (!newIg.includes(url)) newIg.push(url);
+                                            } else if (url.includes('facebook.com') || url.includes('fb.watch') || url.includes('fb.com')) {
+                                              // Ubah format reel FB menjadi format watch biasa
+                                              if (url.match(/facebook\.com\/reel\/(\d+)/i)) {
+                                                url = url.replace(/facebook\.com\/reel\/(\d+)/i, 'facebook.com/watch/?v=$1');
+                                              }
+                                              if (!newFb.includes(url)) newFb.push(url);
+                                            }
+                                          });
+                                          setIgLinks(newIg);
+                                          setFbLinks(newFb);
+                                          e.currentTarget.value = '';
+                                        }
+                                      }
+                                    }}
+                                  />
+                                  <p className="text-[9px] text-slate-400 mt-1">Tekan Enter untuk menambahkan. Sistem otomatis memisahkan link IG dan FB.</p>
+                                </div>
+
+                                {/* IG Links */}
+                                <div className="flex flex-wrap gap-2 items-center">
+                                  <Instagram size={14} className="text-pink-500" />
+                                  {igLinks.length > 0 ? (
+                                    igLinks.map((link, idx) => (
+                                      <div key={idx} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-pink-50 text-pink-700 text-xs font-medium border border-pink-100">
+                                        <a href={link} target="_blank" rel="noopener noreferrer" className="hover:underline flex items-center gap-1">
+                                          Post IG {idx + 1}
+                                          <ExternalLink size={10} />
+                                        </a>
+                                        <button 
+                                          onClick={() => {
+                                            const newLinks = [...igLinks];
+                                            newLinks.splice(idx, 1);
+                                            setIgLinks(newLinks);
+                                          }}
+                                          className="ml-1 p-0.5 hover:bg-pink-200 rounded-full transition-colors"
+                                        >
+                                          <X size={10} />
+                                        </button>
+                                      </div>
+                                    ))
+                                  ) : (
+                                    <span className="text-xs text-slate-400 italic">Belum ada postingan IG</span>
+                                  )}
+                                </div>
+
+                                {/* FB Links */}
+                                <div className="flex flex-wrap gap-2 items-center">
+                                  <Facebook size={14} className="text-blue-500" />
+                                  {fbLinks.length > 0 ? (
+                                    fbLinks.map((link, idx) => (
+                                      <div key={idx} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 text-xs font-medium border border-blue-100">
+                                        <a href={link} target="_blank" rel="noopener noreferrer" className="hover:underline flex items-center gap-1">
+                                          Post FB {idx + 1}
+                                          <ExternalLink size={10} />
+                                        </a>
+                                        <button 
+                                          onClick={() => {
+                                            const newLinks = [...fbLinks];
+                                            newLinks.splice(idx, 1);
+                                            setFbLinks(newLinks);
+                                          }}
+                                          className="ml-1 p-0.5 hover:bg-blue-200 rounded-full transition-colors"
+                                        >
+                                          <X size={10} />
+                                        </button>
+                                      </div>
+                                    ))
+                                  ) : (
+                                    <span className="text-xs text-slate-400 italic">Belum ada postingan FB</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                               <div className="space-y-2">
                                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
@@ -830,12 +944,12 @@ export default function EngagementDashboard() {
                   </div>
 
                   <div ref={printDailyRef} className={cn("bg-white rounded-2xl shadow-sm border border-slate-100 min-h-[400px] md:min-h-[600px] flex flex-col", isExporting ? "p-4 md:p-6 w-max" : "p-4 sm:p-6 md:p-10")}>
-                    <div className={cn("flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-100 gap-2", isExporting ? "mb-3 pb-3" : "mb-8 pb-6")}>
+                    <div className={cn("flex justify-between border-b border-slate-100 gap-2", isExporting ? "flex-row items-center mb-3 pb-3" : "flex-col md:flex-row items-start md:items-center mb-8 pb-6")}>
                       <div className="space-y-0.5">
                         <h3 className={cn("font-black text-slate-900 tracking-tight uppercase", isExporting ? "text-lg" : "text-2xl")}>Laporan Harian</h3>
                         <p className={cn("font-bold text-slate-500 uppercase tracking-widest", isExporting ? "text-[10px]" : "text-sm")}>Rekapitulasi Engagement • {currentDailyDate.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
                       </div>
-                      <div className={cn("text-left md:text-right bg-slate-50 rounded-xl border border-slate-100", isExporting ? "p-2" : "p-3")}>
+                      <div className={cn("bg-slate-50 rounded-xl border border-slate-100", isExporting ? "text-right p-2" : "text-left md:text-right p-3")}>
                         <p className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">RecapLink</p>
                         <p className="text-[8px] text-slate-500">Generated: {new Date().toLocaleDateString('id-ID')}</p>
                       </div>
@@ -993,12 +1107,12 @@ export default function EngagementDashboard() {
                   </div>
 
                   <div ref={printRef} className={cn("bg-white rounded-2xl shadow-sm border border-slate-100 min-h-[400px] md:min-h-[600px] flex flex-col", isExporting ? "p-4 md:p-6 w-max" : "p-4 sm:p-6 md:p-10")}>
-                    <div className={cn("flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-100 gap-2", isExporting ? "mb-3 pb-3" : "mb-8 pb-6")}>
+                    <div className={cn("flex justify-between border-b border-slate-100 gap-2", isExporting ? "flex-row items-center mb-3 pb-3" : "flex-col md:flex-row items-start md:items-center mb-8 pb-6")}>
                       <div className="space-y-0.5">
                         <h3 className={cn("font-black text-slate-900 tracking-tight uppercase", isExporting ? "text-lg" : "text-2xl")}>Laporan Mingguan</h3>
                         <p className={cn("font-bold text-slate-500 uppercase tracking-widest", isExporting ? "text-[10px]" : "text-sm")}>Rekapitulasi Engagement • Minggu ke-{weeklyReports[0]?.weekNumber} • {weeklyReports[0]?.year}</p>
                       </div>
-                      <div className={cn("text-left md:text-right bg-slate-50 rounded-xl border border-slate-100", isExporting ? "p-2" : "p-3")}>
+                      <div className={cn("bg-slate-50 rounded-xl border border-slate-100", isExporting ? "text-right p-2" : "text-left md:text-right p-3")}>
                         <p className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">RecapLink</p>
                         <p className="text-[8px] text-slate-500">Generated: {new Date().toLocaleDateString('id-ID')}</p>
                       </div>
@@ -1069,14 +1183,14 @@ export default function EngagementDashboard() {
                                       <div className="flex items-center justify-center gap-1.5 py-1">
                                         {/* Instagram Indicator */}
                                         {hasIgAccount && !isFuture ? (
-                                          hasIg ? <Instagram size={12} className="text-pink-500" /> : <X size={12} className="text-red-500" strokeWidth={3} />
+                                          hasIg ? <Heart size={12} className="text-pink-500" fill="currentColor" /> : <X size={12} className="text-red-500" strokeWidth={3} />
                                         ) : (
                                           <div className="w-3 h-3" />
                                         )}
 
                                         {/* Facebook Indicator */}
                                         {hasFbAccount && !isFuture ? (
-                                          hasFb ? <Facebook size={12} className="text-blue-500" /> : <X size={12} className="text-red-500" strokeWidth={3} />
+                                          hasFb ? <ThumbsUp size={12} className="text-blue-500" fill="currentColor" /> : <X size={12} className="text-red-500" strokeWidth={3} />
                                         ) : (
                                           <div className="w-3 h-3" />
                                         )}
@@ -1129,7 +1243,7 @@ export default function EngagementDashboard() {
         </div>
       </div>
     </main>
-      <Toaster position="top-right" />
+      <Toaster position="bottom-center" duration={2000} />
     </div>
   );
 }

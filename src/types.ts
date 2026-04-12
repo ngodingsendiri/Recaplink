@@ -16,5 +16,7 @@ export interface DailyEngagement {
   fbRawText: string;
   igEngagedEmployeeIds: string[];
   fbEngagedEmployeeIds: string[];
+  igLinks?: string[];
+  fbLinks?: string[];
   updatedAt: any;
 }
