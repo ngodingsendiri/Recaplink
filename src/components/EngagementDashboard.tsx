@@ -783,13 +783,15 @@ export default function EngagementDashboard() {
                                             if (url.includes('instagram.com')) {
                                               // Ubah format reel IG menjadi format post biasa (/p/)
                                               url = url.replace(/\/(?:reel|reels)\//i, '/p/');
-                                              if (!newIg.includes(url)) newIg.push(url);
+                                              const isDuplicate = dailyEngagements.some(d => d.igLinks?.includes(url));
+                                              if (!newIg.includes(url) && !isDuplicate) newIg.push(url);
                                             } else if (url.includes('facebook.com') || url.includes('fb.watch') || url.includes('fb.com')) {
                                               // Ubah format reel FB menjadi format watch biasa
                                               if (url.match(/facebook\.com\/reel\/(\d+)/i)) {
                                                 url = url.replace(/facebook\.com\/reel\/(\d+)/i, 'facebook.com/watch/?v=$1');
                                               }
-                                              if (!newFb.includes(url)) newFb.push(url);
+                                              const isDuplicate = dailyEngagements.some(d => d.fbLinks?.includes(url));
+                                              if (!newFb.includes(url) && !isDuplicate) newFb.push(url);
                                             }
                                           });
                                           setIgLinks(newIg);
