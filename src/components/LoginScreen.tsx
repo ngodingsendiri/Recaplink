@@ -1,14 +1,63 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { signIn } from '../lib/firebase';
 import { Button } from './ui/button';
 
 export default function LoginScreen() {
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSignIn = async () => {
+    if (isLoggingIn) return;
+    
+    setIsLoggingIn(true);
+    setError(null);
+    
+    try {
+      await signIn();
+    } catch (err: any) {
+      console.error('Login error:', err);
+      // Ignore cancelled popup request error as it's usually harmless
+      if (err.code !== 'auth/cancelled-popup-request') {
+        setError(err.message || 'Failed to sign in. Please try again.');
+      }
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
-      <div className="p-8 bg-white rounded-2xl shadow-sm border border-slate-100 text-center">
-        <h1 className="text-2xl font-bold mb-4">Welcome to RecapLink</h1>
-        <p className="text-slate-500 mb-8">Please sign in to continue.</p>
-        <Button onClick={signIn}>Sign in with Google</Button>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 bg-grid-pattern">
+      <div className="p-8 bg-white rounded-2xl shadow-xl border border-slate-100 text-center max-w-sm w-full mx-4">
+        <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-indigo-100">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+          </svg>
+        </div>
+        <h1 className="text-2xl font-bold mb-2 text-slate-900">RecapLink</h1>
+        <p className="text-slate-500 mb-8 text-sm">Aplikasi Rekapitulasi Engagement Pegawai. Silakan masuk untuk melanjutkan.</p>
+        
+        {error && (
+          <div className="mb-6 p-3 bg-red-50 text-red-600 text-xs rounded-lg border border-red-100 font-medium">
+            {error}
+          </div>
+        )}
+
+        <Button 
+          onClick={handleSignIn} 
+          disabled={isLoggingIn}
+          className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition-all active:scale-[0.98]"
+        >
+          {isLoggingIn ? (
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              Memproses...
+            </div>
+          ) : 'Masuk dengan Google'}
+        </Button>
+        
+        <p className="mt-8 text-[10px] text-slate-400 uppercase tracking-widest font-bold">
+          Internal Use Only
+        </p>
       </div>
     </div>
   );
