@@ -240,3 +240,9 @@ body {
     @apply font-sans;
     }
 }
+
+@utility bg-grid-pattern {
+  background-image: linear-gradient(to right, #00000008 1px, transparent 1px),
+                    linear-gradient(to bottom, #00000008 1px, transparent 1px);
+  background-size: 24px 24px;
+}

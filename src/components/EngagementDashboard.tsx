@@ -137,6 +137,30 @@ export default function EngagementDashboard() {
     return unsubscribe;
   }, [user, loading]);
 
+  const closeInputModal = () => {
+    setIsInputModalOpen(false);
+    if (window.history.state?.modal === 'input') {
+      window.history.back();
+    }
+  };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (isInputModalOpen) {
+        setIsInputModalOpen(false);
+      }
+    };
+
+    if (isInputModalOpen) {
+      window.history.pushState({ modal: 'input' }, '');
+      window.addEventListener('popstate', handlePopState);
+    }
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [isInputModalOpen]);
+
   // Load raw text and links for selected date if exists
   useEffect(() => {
     const existing = dailyEngagements.find(d => d.id === selectedDate);
@@ -291,7 +315,7 @@ export default function EngagementDashboard() {
       });
 
       toast.success(`Data rekap tanggal ${selectedDate} berhasil disimpan`);
-      setIsInputModalOpen(false);
+      closeInputModal();
     } catch (error: any) {
       console.error('Error saving engagement:', error);
       if (error.code === 'permission-denied' || error.message?.includes('Missing or insufficient permissions')) {
@@ -422,7 +446,7 @@ export default function EngagementDashboard() {
   };
 
   return (
-    <div className="flex h-[100dvh] bg-[#fafafa] font-sans overflow-hidden">
+    <div className="flex h-[100dvh] bg-[#fafafa] bg-grid-pattern font-sans overflow-hidden relative">
       {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {isSidebarOpen && (
@@ -742,19 +766,19 @@ export default function EngagementDashboard() {
                           initial={{ opacity: 0, scale: 0.95, y: 10 }}
                           animate={{ opacity: 1, scale: 1, y: 0 }}
                           exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                          className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden"
+                          className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
                         >
-                          <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                          <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 shrink-0">
                             <div>
                               <h3 className="text-lg font-bold text-slate-900">Input Rekapitulasi</h3>
                               <p className="text-xs text-slate-500">{new Date(selectedDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                             </div>
-                            <Button variant="ghost" size="icon" onClick={() => setIsInputModalOpen(false)} className="rounded-full">
+                            <Button variant="ghost" size="icon" onClick={closeInputModal} className="rounded-full">
                               <XCircle className="text-slate-400" size={20} />
                             </Button>
                           </div>
                           
-                          <div className="p-6 space-y-6">
+                          <div className="p-6 space-y-6 overflow-y-auto">
                             {/* Meta Links Section */}
                             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-4">
                               <div className="flex items-center justify-between">
@@ -894,8 +918,8 @@ export default function EngagementDashboard() {
                             </div>
                           </div>
 
-                          <div className="p-6 bg-slate-50/50 border-t border-slate-100 flex justify-end gap-3">
-                            <Button variant="ghost" onClick={() => setIsInputModalOpen(false)} className="font-bold text-xs rounded-xl h-11 px-6">
+                          <div className="p-6 bg-slate-50/50 border-t border-slate-100 flex justify-end gap-3 shrink-0">
+                            <Button variant="ghost" onClick={closeInputModal} className="font-bold text-xs rounded-xl h-11 px-6">
                               Batal
                             </Button>
                             <Button 
