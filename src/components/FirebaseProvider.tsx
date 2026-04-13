@@ -7,7 +7,8 @@ const ALLOWED_EMAILS = [
   'ngerjaindiri@gmail.com',
   'sipencil@gmail.com',
   'malespintar@gmail.com',
-  'lareina.adara@gmail.com'
+  'lareina.adara@gmail.com',
+  'abiemputra.asn@gmail.com'
 ];
 
 interface AuthContextType {
