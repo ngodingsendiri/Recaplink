@@ -161,6 +161,11 @@ export default function EngagementDashboard() {
     };
   }, [isInputModalOpen]);
 
+  const [initialIgRawInput, setInitialIgRawInput] = useState('');
+  const [initialFbRawInput, setInitialFbRawInput] = useState('');
+  const [initialIgLinks, setInitialIgLinks] = useState<string[]>([]);
+  const [initialFbLinks, setInitialFbLinks] = useState<string[]>([]);
+
   // Load raw text and links for selected date if exists
   useEffect(() => {
     const existing = dailyEngagements.find(d => d.id === selectedDate);
@@ -169,11 +174,21 @@ export default function EngagementDashboard() {
       setFbRawInput(existing.fbRawText || '');
       setIgLinks(existing.igLinks || []);
       setFbLinks(existing.fbLinks || []);
+      
+      setInitialIgRawInput(existing.igRawText || '');
+      setInitialFbRawInput(existing.fbRawText || '');
+      setInitialIgLinks(existing.igLinks || []);
+      setInitialFbLinks(existing.fbLinks || []);
     } else {
       setIgRawInput('');
       setFbRawInput('');
       setIgLinks([]);
       setFbLinks([]);
+      
+      setInitialIgRawInput('');
+      setInitialFbRawInput('');
+      setInitialIgLinks([]);
+      setInitialFbLinks([]);
     }
   }, [selectedDate, dailyEngagements]);
 
@@ -303,16 +318,30 @@ export default function EngagementDashboard() {
       const igEngagedIds = processInput(igRawInput);
       const fbEngagedIds = processInput(fbRawInput);
 
-      await setDoc(doc(db, 'dailyEngagement', selectedDate), {
+      const docRef = doc(db, 'dailyEngagement', selectedDate);
+      
+      // Check if user actually modified IG or FB data
+      const igChanged = igRawInput !== initialIgRawInput || JSON.stringify(igLinks) !== JSON.stringify(initialIgLinks);
+      const fbChanged = fbRawInput !== initialFbRawInput || JSON.stringify(fbLinks) !== JSON.stringify(initialFbLinks);
+      
+      const updateData: any = {
         date: selectedDate,
-        igRawText: igRawInput,
-        fbRawText: fbRawInput,
-        igEngagedEmployeeIds: igEngagedIds,
-        fbEngagedEmployeeIds: fbEngagedIds,
-        igLinks: igLinks,
-        fbLinks: fbLinks,
         updatedAt: serverTimestamp()
-      });
+      };
+      
+      if (igChanged) {
+        updateData.igRawText = igRawInput;
+        updateData.igEngagedEmployeeIds = igEngagedIds;
+        updateData.igLinks = igLinks;
+      }
+      
+      if (fbChanged) {
+        updateData.fbRawText = fbRawInput;
+        updateData.fbEngagedEmployeeIds = fbEngagedIds;
+        updateData.fbLinks = fbLinks;
+      }
+
+      await setDoc(docRef, updateData, { merge: true });
 
       toast.success(`Data rekap tanggal ${selectedDate} berhasil disimpan`);
       closeInputModal();
@@ -609,7 +638,7 @@ export default function EngagementDashboard() {
                   </div>
 
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-                    <Card className="lg:col-span-2 border-slate-100/50 shadow-sm rounded-2xl overflow-hidden">
+                    <Card className="lg:col-span-2 border-slate-100/50 shadow-sm rounded-2xl overflow-hidden bg-white/80 backdrop-blur-sm">
                       <CardHeader className="p-6 border-b border-slate-50">
                         <CardTitle className="text-base font-bold">Tren Engagement (7 Hari Terakhir)</CardTitle>
                         <CardDescription className="text-xs">Perbandingan interaksi harian Instagram & Facebook</CardDescription>
@@ -641,7 +670,7 @@ export default function EngagementDashboard() {
                       </CardContent>
                     </Card>
 
-                    <Card className="lg:col-span-1 border-slate-100/50 shadow-sm rounded-2xl overflow-hidden">
+                    <Card className="lg:col-span-1 border-slate-100/50 shadow-sm rounded-2xl overflow-hidden bg-white/80 backdrop-blur-sm">
                       <CardHeader className="p-6 border-b border-slate-50">
                         <CardTitle className="text-base font-bold">Aktivitas Terakhir</CardTitle>
                         <CardDescription className="text-xs">Riwayat pembaruan data rekap</CardDescription>
