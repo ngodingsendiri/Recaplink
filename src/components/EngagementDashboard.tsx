@@ -83,6 +83,9 @@ export default function EngagementDashboard() {
   const [weeklySortMode, setWeeklySortMode] = useState<'name' | 'bidang'>('bidang');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+
+  const igInputRef = useRef<HTMLTextAreaElement>(null);
+  const fbInputRef = useRef<HTMLTextAreaElement>(null);
   const printRef = useRef<HTMLDivElement>(null);
   const printDailyRef = useRef<HTMLDivElement>(null);
 
@@ -191,6 +194,15 @@ export default function EngagementDashboard() {
       setInitialFbLinks([]);
     }
   }, [selectedDate, dailyEngagements]);
+
+  const sortedEmployees = useMemo(() => {
+    return employees.slice().sort((a, b) => {
+      if (weeklySortMode === 'name') {
+        return a.name.localeCompare(b.name);
+      }
+      return (a.bidang || '').localeCompare(b.bidang || '') || a.name.localeCompare(b.name);
+    });
+  }, [employees, weeklySortMode]);
 
   const handleExportPDF = async (ref: React.RefObject<HTMLDivElement>, filename: string) => {
     if (!ref.current) return;
@@ -315,14 +327,17 @@ export default function EngagementDashboard() {
         return matchedIds;
       };
 
-      const igEngagedIds = processInput(igRawInput);
-      const fbEngagedIds = processInput(fbRawInput);
+      const currentIgRawInput = igInputRef.current ? igInputRef.current.value : igRawInput;
+      const currentFbRawInput = fbInputRef.current ? fbInputRef.current.value : fbRawInput;
+
+      const igEngagedIds = processInput(currentIgRawInput);
+      const fbEngagedIds = processInput(currentFbRawInput);
 
       const docRef = doc(db, 'dailyEngagement', selectedDate);
       
       // Check if user actually modified IG or FB data
-      const igChanged = igRawInput !== initialIgRawInput || JSON.stringify(igLinks) !== JSON.stringify(initialIgLinks);
-      const fbChanged = fbRawInput !== initialFbRawInput || JSON.stringify(fbLinks) !== JSON.stringify(initialFbLinks);
+      const igChanged = currentIgRawInput !== initialIgRawInput || JSON.stringify(igLinks) !== JSON.stringify(initialIgLinks);
+      const fbChanged = currentFbRawInput !== initialFbRawInput || JSON.stringify(fbLinks) !== JSON.stringify(initialFbLinks);
       
       const updateData: any = {
         date: selectedDate,
@@ -330,13 +345,13 @@ export default function EngagementDashboard() {
       };
       
       if (igChanged) {
-        updateData.igRawText = igRawInput;
+        updateData.igRawText = currentIgRawInput;
         updateData.igEngagedEmployeeIds = igEngagedIds;
         updateData.igLinks = igLinks;
       }
       
       if (fbChanged) {
-        updateData.fbRawText = fbRawInput;
+        updateData.fbRawText = currentFbRawInput;
         updateData.fbEngagedEmployeeIds = fbEngagedIds;
         updateData.fbLinks = fbLinks;
       }
@@ -839,9 +854,11 @@ export default function EngagementDashboard() {
                                               const isDuplicate = dailyEngagements.some(d => d.igLinks?.includes(url));
                                               if (!newIg.includes(url) && !isDuplicate) newIg.push(url);
                                             } else if (url.includes('facebook.com') || url.includes('fb.watch') || url.includes('fb.com')) {
-                                              // Ubah format reel FB menjadi format watch biasa
+                                              // Ubah format reel FB menjadi format post biasa (/p/)
                                               if (url.match(/facebook\.com\/reel\/(\d+)/i)) {
-                                                url = url.replace(/facebook\.com\/reel\/(\d+)/i, 'facebook.com/watch/?v=$1');
+                                                url = url.replace(/facebook\.com\/reel\/(\d+)/i, 'facebook.com/p/$1');
+                                              } else if (url.match(/facebook\.com\/share\/r\/([a-zA-Z0-9]+)/i)) {
+                                                url = url.replace(/facebook\.com\/share\/r\/([a-zA-Z0-9]+)/i, 'facebook.com/share/p/$1');
                                               }
                                               const isDuplicate = dailyEngagements.some(d => d.fbLinks?.includes(url));
                                               if (!newFb.includes(url) && !isDuplicate) newFb.push(url);
@@ -920,8 +937,8 @@ export default function EngagementDashboard() {
                                   List Nama/Username IG
                                 </label>
                                 <textarea
-                                  value={igRawInput}
-                                  onChange={(e) => setIgRawInput(e.target.value)}
+                                  ref={igInputRef}
+                                  defaultValue={igRawInput}
                                   placeholder="Paste list nama atau username di sini..."
                                   className="w-full h-32 md:h-40 p-3 md:p-4 rounded-xl border border-slate-200 bg-slate-50/30 focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all text-sm resize-none"
                                 />
@@ -932,8 +949,8 @@ export default function EngagementDashboard() {
                                   List Nama/Username FB
                                 </label>
                                 <textarea
-                                  value={fbRawInput}
-                                  onChange={(e) => setFbRawInput(e.target.value)}
+                                  ref={fbInputRef}
+                                  defaultValue={fbRawInput}
                                   placeholder="Paste list nama atau username di sini..."
                                   className="w-full h-32 md:h-40 p-3 md:p-4 rounded-xl border border-slate-200 bg-slate-50/30 focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all text-sm resize-none"
                                 />
@@ -1062,12 +1079,7 @@ export default function EngagementDashboard() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {employees.slice().sort((a, b) => {
-                              if (weeklySortMode === 'name') {
-                                return a.name.localeCompare(b.name);
-                              }
-                              return (a.bidang || '').localeCompare(b.bidang || '') || a.name.localeCompare(b.name);
-                            }).map((emp) => {
+                            {sortedEmployees.map((emp) => {
                               const dateStr = getLocalISODate(currentDailyDate);
                               const engagement = dailyEngagements.find(d => d.id === dateStr);
                               const hasIg = engagement?.igEngagedEmployeeIds?.includes(emp.id);
@@ -1228,12 +1240,7 @@ export default function EngagementDashboard() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {employees.slice().sort((a, b) => {
-                              if (weeklySortMode === 'name') {
-                                return a.name.localeCompare(b.name);
-                              }
-                              return (a.bidang || '').localeCompare(b.bidang || '') || a.name.localeCompare(b.name);
-                            }).map((emp) => (
+                            {sortedEmployees.map((emp) => (
                               <TableRow key={emp.id} className="hover:bg-slate-50/30 transition-colors border-b border-slate-50">
                                 <TableCell className="sticky left-0 z-10 bg-white border-r border-slate-100 px-2 py-1 w-[1%] whitespace-nowrap">
                                   <div className="flex items-center gap-2">
