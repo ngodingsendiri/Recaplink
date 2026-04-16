@@ -84,6 +84,10 @@ export default function EngagementDashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
+  // Meta API State
+  const [metaToken, setMetaToken] = useState('');
+  const [isFetchingMeta, setIsFetchingMeta] = useState(false);
+
   const igInputRef = useRef<HTMLTextAreaElement>(null);
   const fbInputRef = useRef<HTMLTextAreaElement>(null);
   const printRef = useRef<HTMLDivElement>(null);
@@ -203,6 +207,63 @@ export default function EngagementDashboard() {
       return (a.bidang || '').localeCompare(b.bidang || '') || a.name.localeCompare(b.name);
     });
   }, [employees, weeklySortMode]);
+
+  const handleFetchRecentMeta = async () => {
+    setIsFetchingMeta(true);
+    try {
+      const res = await fetch('/api/meta/fetch-recent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: selectedDate, token: metaToken })
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Gagal mengambil data dari Meta API');
+      }
+      
+      const { commenters, fbLinks: newFbLinks, igLinks: newIgLinks, fbPostCount, igPostCount, debug } = data;
+      
+      // Update Links
+      if (newIgLinks && newIgLinks.length > 0) {
+        setIgLinks(prev => Array.from(new Set([...prev, ...newIgLinks])));
+      }
+      if (newFbLinks && newFbLinks.length > 0) {
+        setFbLinks(prev => Array.from(new Set([...prev, ...newFbLinks])));
+      }
+
+      // Pisahkan username berdasarkan platform (hanya IG yang ditarik komentarnya)
+      const igUsernames = (commenters || []).filter((c: any) => c.platform === 'ig').map((c: any) => c.username);
+
+      // Masukkan raw username ke dalam text area secara otomatis
+      if (igUsernames.length > 0) {
+        setIgRawInput(prev => {
+          const newVal = prev ? prev + '\n' + igUsernames.join('\n') : igUsernames.join('\n');
+          if (igInputRef.current) igInputRef.current.value = newVal;
+          return newVal;
+        });
+      }
+
+      if (fbPostCount === 0 && igPostCount === 0) {
+        let msg = `Tidak ada postingan pada tanggal ${selectedDate}.`;
+        if (debug?.latestFbPostDate) {
+          const d = new Date(debug.latestFbPostDate);
+          msg += ` Postingan FB terakhir adalah tanggal ${d.toLocaleDateString('id-ID')}.`;
+        }
+        if (!debug?.igLinked) {
+          msg += ` (Akun Instagram Bisnis belum terhubung ke Halaman FB ini).`;
+        }
+        toast.warning(msg, { duration: 6000 });
+      } else {
+        toast.success(`Ditemukan ${igPostCount} post IG & ${fbPostCount} post FB. Berhasil menarik ${commenters.length} komentar IG ke dalam form.`);
+      }
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setIsFetchingMeta(false);
+    }
+  };
 
   const handleExportPDF = async (ref: React.RefObject<HTMLDivElement>, filename: string) => {
     if (!ref.current) return;
@@ -823,6 +884,41 @@ export default function EngagementDashboard() {
                           </div>
                           
                           <div className="p-6 space-y-6 overflow-y-auto">
+                            {/* Meta API Fetch Section */}
+                            <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 space-y-4">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <RefreshCw size={16} className="text-indigo-500" />
+                                  <h4 className="text-sm font-bold text-indigo-900">Tarik Komentar via Meta API</h4>
+                                </div>
+                                <Badge variant="outline" className="bg-indigo-100 text-indigo-700 border-indigo-200 text-[9px]">Otomatis</Badge>
+                              </div>
+
+                              <div className="space-y-2">
+                                <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Access Token Meta API</label>
+                                <input 
+                                  type="password"
+                                  value={metaToken}
+                                  onChange={(e) => setMetaToken(e.target.value)}
+                                  placeholder="Paste token Meta API di sini (opsional jika sudah diset di Environment Variables)..."
+                                  className="w-full h-10 px-3 rounded-lg border border-indigo-200 bg-white text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                                />
+                              </div>
+                              
+                              <div className="flex flex-col gap-3">
+                                <Button 
+                                  onClick={handleFetchRecentMeta}
+                                  disabled={isFetchingMeta}
+                                  className="w-full h-10 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 rounded-lg shadow-sm"
+                                >
+                                  {isFetchingMeta ? 'Menarik...' : 'Tarik Postingan (15:00 H-1 s/d 15:00 Hari Ini)'}
+                                </Button>
+                              </div>
+                              <p className="text-[10px] text-indigo-400/80 leading-relaxed mt-3">
+                                Sistem akan otomatis menarik semua komentar dari postingan Instagram yang diunggah antara jam 15:00 WIB kemarin hingga 15:00 WIB hari ini. Untuk Facebook, sistem hanya akan menarik link postingannya saja (karena batasan privasi API Meta).
+                              </p>
+                            </div>
+
                             {/* Meta Links Section */}
                             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-4">
                               <div className="flex items-center justify-between">
