@@ -65,6 +65,30 @@ const getLocalISODate = (date: Date) => {
   return `${y}-${m}-${d}`;
 };
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.05
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 24
+    }
+  }
+};
+
 export default function EngagementDashboard() {
   const { user, loading } = useAuth();
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -566,16 +590,25 @@ export default function EngagementDashboard() {
       </AnimatePresence>
 
       {/* Sidebar */}
-      <aside className={cn(
-        "fixed lg:static inset-y-0 left-0 w-72 bg-white border-r border-slate-100 flex flex-col shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-50 transition-transform duration-300 ease-in-out",
-        isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-      )}>
+      <motion.aside 
+        initial={false}
+        animate={{ x: isSidebarOpen || window.innerWidth >= 1024 ? 0 : -288 }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        className={cn(
+          "fixed lg:static inset-y-0 left-0 w-72 bg-white border-r border-slate-100 flex flex-col shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-50",
+          !isSidebarOpen && "lg:translate-x-0"
+        )}
+      >
         <div className="p-6 flex-1 overflow-y-auto">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
+              <motion.div 
+                className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200"
+                whileHover={{ rotate: 12, scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
                 <BarChart3 className="text-white" size={22} />
-              </div>
+              </motion.div>
               <div>
                 <h1 className="text-xl font-bold tracking-tight text-slate-900 leading-none">RecapLink</h1>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Smart Engine</p>
@@ -654,7 +687,7 @@ export default function EngagementDashboard() {
             </div>
           )}
         </div>
-      </aside>
+      </motion.aside>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative pb-20 lg:pb-0">
@@ -710,19 +743,20 @@ export default function EngagementDashboard() {
               {activeTab === 'dashboard' && (
                 <motion.div
                   key="dashboard"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="space-y-6 md:space-y-8"
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="hidden"
+                  className="space-y-6 md:space-y-10"
                 >
-                  <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                  <motion.div variants={itemVariants} className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                     <div className="space-y-0.5">
                       <h2 className="text-xl font-bold tracking-tight text-slate-900">Dashboard Utama</h2>
                       <p className="text-slate-500 text-xs">Ringkasan statistik dan tren engagement pegawai</p>
                     </div>
-                  </div>
+                  </motion.div>
 
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
+                  <motion.div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6" variants={itemVariants}>
                     <StatCard 
                       title="Total Pegawai" 
                       value={stats.totalEmployees.toString()} 
@@ -747,82 +781,87 @@ export default function EngagementDashboard() {
                       icon={<CheckCircle2 size={20} />} 
                       color="rose" 
                     />
-                  </div>
+                  </motion.div>
 
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-                    <Card className="lg:col-span-2 border-slate-100/50 shadow-sm rounded-2xl overflow-hidden bg-white/80 backdrop-blur-sm">
-                      <CardHeader className="p-6 border-b border-slate-50">
-                        <CardTitle className="text-base font-bold">Tren Engagement (7 Hari Terakhir)</CardTitle>
-                        <CardDescription className="text-xs">Perbandingan interaksi harian Instagram & Facebook</CardDescription>
-                      </CardHeader>
-                      <CardContent className="p-6 h-[300px] min-h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                          <BarChart data={chartData}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                            <XAxis 
-                              dataKey="name" 
-                              axisLine={false} 
-                              tickLine={false} 
-                              tick={{ fontSize: 10, fontWeight: 600, fill: '#94a3b8' }}
-                              dy={10}
-                            />
-                            <YAxis 
-                              axisLine={false} 
-                              tickLine={false} 
-                              tick={{ fontSize: 10, fontWeight: 600, fill: '#94a3b8' }}
-                            />
-                            <Tooltip 
-                              cursor={{ fill: '#f8fafc' }}
-                              contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                            />
-                            <Bar dataKey="ig" name="Instagram" stackId="a" fill="#ec4899" radius={[0, 0, 0, 0]} barSize={32} />
-                            <Bar dataKey="fb" name="Facebook" stackId="a" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={32} />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </CardContent>
-                    </Card>
+                    <motion.div variants={itemVariants} className="lg:col-span-2">
+                      <Card className="h-full border-slate-100/50 shadow-sm rounded-2xl overflow-hidden bg-white/80 backdrop-blur-sm">
+                        <CardHeader className="p-6 border-b border-slate-50">
+                          <CardTitle className="text-base font-bold">Tren Engagement (7 Hari Terakhir)</CardTitle>
+                          <CardDescription className="text-xs">Perbandingan interaksi harian Instagram & Facebook</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-6 h-[300px] min-h-[300px]">
+                          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                            <BarChart data={chartData}>
+                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                              <XAxis 
+                                dataKey="name" 
+                                axisLine={false} 
+                                tickLine={false} 
+                                tick={{ fontSize: 10, fontWeight: 600, fill: '#94a3b8' }}
+                                dy={10}
+                              />
+                              <YAxis 
+                                axisLine={false} 
+                                tickLine={false} 
+                                tick={{ fontSize: 10, fontWeight: 600, fill: '#94a3b8' }}
+                              />
+                              <Tooltip 
+                                cursor={{ fill: '#f8fafc' }}
+                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                              />
+                              <Bar dataKey="ig" name="Instagram" stackId="a" fill="#ec4899" radius={[0, 0, 0, 0]} barSize={32} />
+                              <Bar dataKey="fb" name="Facebook" stackId="a" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={32} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
 
-                    <Card className="lg:col-span-1 border-slate-100/50 shadow-sm rounded-2xl overflow-hidden bg-white/80 backdrop-blur-sm">
-                      <CardHeader className="p-6 border-b border-slate-50">
-                        <CardTitle className="text-base font-bold">Aktivitas Terakhir</CardTitle>
-                        <CardDescription className="text-xs">Riwayat pembaruan data rekap</CardDescription>
-                      </CardHeader>
-                      <CardContent className="p-0">
-                        <ScrollArea className="h-[300px]">
-                          <div className="divide-y divide-slate-50">
-                            {dailyEngagements.slice(0, 5).map((eng, i) => (
-                              <div key={i} className="p-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500">
-                                    <CalendarIcon size={14} />
+                    <motion.div variants={itemVariants} className="lg:col-span-1">
+                      <Card className="h-full border-slate-100/50 shadow-sm rounded-2xl overflow-hidden bg-white/80 backdrop-blur-sm">
+                        <CardHeader className="p-6 border-b border-slate-50">
+                          <CardTitle className="text-base font-bold">Aktivitas Terakhir</CardTitle>
+                          <CardDescription className="text-xs">Riwayat pembaruan data rekap</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                          <ScrollArea className="h-[300px]">
+                            <div className="divide-y divide-slate-50">
+                              {dailyEngagements.slice(0, 5).map((eng, i) => (
+                                <div key={i} className="p-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500">
+                                      <CalendarIcon size={14} />
+                                    </div>
+                                    <div>
+                                      <p className="text-xs font-bold text-slate-900">{new Date(eng.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long' })}</p>
+                                      <p className="text-[10px] text-slate-400">{(eng.igEngagedEmployeeIds?.length || 0) + (eng.fbEngagedEmployeeIds?.length || 0)} Interaksi</p>
+                                    </div>
                                   </div>
-                                  <div>
-                                    <p className="text-xs font-bold text-slate-900">{new Date(eng.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long' })}</p>
-                                    <p className="text-[10px] text-slate-400">{(eng.igEngagedEmployeeIds?.length || 0) + (eng.fbEngagedEmployeeIds?.length || 0)} Interaksi</p>
-                                  </div>
+                                  <Badge variant="outline" className="text-[9px] font-bold border-slate-100 text-slate-400">Selesai</Badge>
                                 </div>
-                                <Badge variant="outline" className="text-[9px] font-bold border-slate-100 text-slate-400">Selesai</Badge>
-                              </div>
-                            ))}
-                            {dailyEngagements.length === 0 && (
-                              <div className="p-8 text-center text-slate-400 text-xs italic">Belum ada aktivitas.</div>
-                            )}
-                          </div>
-                        </ScrollArea>
-                      </CardContent>
-                    </Card>
+                              ))}
+                              {dailyEngagements.length === 0 && (
+                                <div className="p-8 text-center text-slate-400 text-xs italic">Belum ada aktivitas.</div>
+                              )}
+                            </div>
+                          </ScrollArea>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
                   </div>
                 </motion.div>
               )}
                {activeTab === 'overview' && (
                 <motion.div 
                   key="overview"
-                  initial={{ opacity: 0, scale: 0.99 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.99 }}
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="hidden"
                   className="space-y-6 md:space-y-8"
                 >
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                  <motion.div variants={itemVariants} className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                     <div className="space-y-0.5">
                       <h2 className="text-xl font-bold tracking-tight text-slate-900">Rekap Harian</h2>
                       <p className="text-slate-500 text-xs">Pilih tanggal pada kalender untuk mengisi atau melihat data rekapitulasi</p>
@@ -841,9 +880,9 @@ export default function EngagementDashboard() {
                         <ChevronRight size={16} />
                       </Button>
                     </div>
-                  </div>
+                  </motion.div>
 
-                  <div className="bg-white rounded-2xl p-4 sm:p-6 md:p-10 shadow-sm border border-slate-100">
+                  <motion.div variants={itemVariants} className="bg-white rounded-2xl p-4 sm:p-6 md:p-10 shadow-sm border border-slate-100">
                     <div className="flex justify-end mb-4 md:mb-6">
                       <div className="flex gap-3 md:gap-6 text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-slate-400 bg-slate-50/50 px-3 md:px-6 py-2 md:py-3 rounded-2xl border border-slate-100 w-full md:w-auto justify-center">
                         <div className="flex items-center gap-2">
@@ -897,7 +936,7 @@ export default function EngagementDashboard() {
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
 
                   {/* Input Modal */}
                   <AnimatePresence>
@@ -1118,12 +1157,13 @@ export default function EngagementDashboard() {
               {activeTab === 'daily-report' && (
                 <motion.div 
                   key="daily-report"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="hidden"
                   className="space-y-6 md:space-y-8"
                 >
-                  <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100">
+                  <motion.div variants={itemVariants} className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100">
                     <div className="space-y-0.5">
                       <h2 className="text-xl font-bold tracking-tight text-slate-900">Laporan Harian</h2>
                       <p className="text-slate-500 text-xs">Unduh dan lihat rekapitulasi engagement harian</p>
@@ -1175,9 +1215,9 @@ export default function EngagementDashboard() {
                                 </div>
                               </div>
                             </div>
-                          </div>
+                          </motion.div>
 
-                  <div ref={printDailyRef} className={cn("bg-white rounded-2xl shadow-sm border border-slate-100 min-h-[400px] md:min-h-[600px] flex flex-col", isExporting ? "p-4 md:p-6 w-max" : "p-4 sm:p-6 md:p-10")}>
+                  <motion.div variants={itemVariants} ref={printDailyRef} className={cn("bg-white rounded-2xl shadow-sm border border-slate-100 min-h-[400px] md:min-h-[600px] flex flex-col", isExporting ? "p-4 md:p-6 w-max" : "p-4 sm:p-6 md:p-10")}>
                     <div className={cn("flex justify-between border-b border-slate-100 gap-2", isExporting ? "flex-row items-center mb-3 pb-3" : "flex-col md:flex-row items-start md:items-center mb-8 pb-6")}>
                       <div className="space-y-0.5">
                         <h3 className={cn("font-black text-slate-900 tracking-tight uppercase", isExporting ? "text-lg" : "text-2xl")}>Laporan Harian</h3>
@@ -1270,19 +1310,20 @@ export default function EngagementDashboard() {
                         </Table>
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 </motion.div>
               )}
 
                {activeTab === 'reports' && (
                 <motion.div 
                   key="reports"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="hidden"
                   className="space-y-6 md:space-y-8"
                 >
-                  <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100">
+                  <motion.div variants={itemVariants} className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100">
                     <div className="space-y-0.5">
                       <h2 className="text-xl font-bold tracking-tight text-slate-900">Laporan Mingguan</h2>
                       <p className="text-slate-500 text-xs">Unduh dan lihat rekapitulasi engagement mingguan</p>
@@ -1333,9 +1374,9 @@ export default function EngagementDashboard() {
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
 
-                  <div ref={printRef} className={cn("bg-white rounded-2xl shadow-sm border border-slate-100 min-h-[400px] md:min-h-[600px] flex flex-col", isExporting ? "p-4 md:p-6 w-max" : "p-4 sm:p-6 md:p-10")}>
+                  <motion.div variants={itemVariants} ref={printRef} className={cn("bg-white rounded-2xl shadow-sm border border-slate-100 min-h-[400px] md:min-h-[600px] flex flex-col", isExporting ? "p-4 md:p-6 w-max" : "p-4 sm:p-6 md:p-10")}>
                     <div className={cn("flex justify-between border-b border-slate-100 gap-2", isExporting ? "flex-row items-center mb-3 pb-3" : "flex-col md:flex-row items-start md:items-center mb-8 pb-6")}>
                       <div className="space-y-0.5">
                         <h3 className={cn("font-black text-slate-900 tracking-tight uppercase", isExporting ? "text-lg" : "text-2xl")}>Laporan Mingguan</h3>
@@ -1438,15 +1479,17 @@ export default function EngagementDashboard() {
                         </Table>
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 </motion.div>
               )}
 
             {activeTab === 'employees' && (
               <motion.div 
                 key="employees"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
               >
                 <EmployeeManager />
               </motion.div>
@@ -1455,11 +1498,13 @@ export default function EngagementDashboard() {
             {activeTab === 'settings' && (
               <motion.div 
                 key="settings"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
                 className="space-y-8"
               >
-                <div className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm">
+                <div className="bg-white rounded-[2.5rem] p-4 sm:p-10 border border-slate-100 shadow-sm">
                   <div className="flex items-center gap-4 mb-8">
                     <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center">
                       <Settings className="text-indigo-600" size={24} />
@@ -1478,7 +1523,12 @@ export default function EngagementDashboard() {
       </div>
     </main>
       {/* Bottom Navigation for Mobile */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-t border-slate-100 px-4 h-20 flex items-center justify-around pb-safe">
+      <motion.nav 
+        initial={{ y: 100 }}
+        animate={{ y: 0 }}
+        transition={{ type: "spring", stiffness: 200, damping: 25 }}
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-t border-slate-100 px-4 h-20 flex items-center justify-around pb-safe"
+      >
         <BottomNavItem 
           active={activeTab === 'dashboard'} 
           onClick={() => setActiveTab('dashboard')} 
@@ -1503,7 +1553,7 @@ export default function EngagementDashboard() {
           icon={<History size={22} />} 
           label="Mingguan" 
         />
-      </nav>
+      </motion.nav>
 
       <Toaster position="bottom-center" duration={2000} />
     </div>
@@ -1545,39 +1595,58 @@ function StatCard({ title, value, icon, color }: { title: string, value: string,
   };
 
   return (
-    <Card className="border-slate-100/50 shadow-sm rounded-2xl overflow-hidden group hover:shadow-md transition-all bg-white relative">
-      <CardContent className="p-4 md:p-6">
-        <div className="flex items-center justify-between mb-3 md:mb-4">
-          <div className={`p-2 md:p-2.5 rounded-xl ${colorMap[color]} transition-transform group-hover:scale-110 border shrink-0`}>
-            {React.cloneElement(icon as React.ReactElement, { size: 18 })}
+    <motion.div
+      whileHover={{ y: -5, scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ type: "spring", stiffness: 400, damping: 17 }}
+    >
+      <Card className="border-slate-100/50 shadow-sm rounded-2xl overflow-hidden group hover:shadow-md transition-all bg-white relative h-full">
+        <CardContent className="p-4 md:p-6">
+          <div className="flex items-center justify-between mb-3 md:mb-4">
+            <motion.div 
+              className={`p-2 md:p-2.5 rounded-xl ${colorMap[color]} border shrink-0 shadow-sm`}
+              whileHover={{ rotate: [0, -10, 10, 0] }}
+            >
+              {React.cloneElement(icon as React.ReactElement, { size: 18 })}
+            </motion.div>
+            <div className="w-1.5 h-1.5 rounded-full bg-slate-200 absolute top-4 right-4" />
           </div>
-          <div className="w-1.5 h-1.5 rounded-full bg-slate-200 absolute top-4 right-4" />
-        </div>
-        <div className="space-y-0.5">
-          <div className="text-xl md:text-2xl font-black text-slate-900 tracking-tight leading-tight">{value}</div>
-          <div className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-tighter sm:tracking-wider">{title}</div>
-        </div>
-      </CardContent>
-    </Card>
+          <div className="space-y-0.5">
+            <div className="text-xl md:text-2xl font-black text-slate-900 tracking-tight leading-tight">{value}</div>
+            <div className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-tighter sm:tracking-wider">{title}</div>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
 
 function NavItem({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string }) {
   return (
-    <Button 
-      variant="ghost" 
-      className={`w-full justify-start gap-3 h-11 rounded-xl px-4 transition-all duration-200 ${
-        active 
-          ? 'bg-indigo-600 text-white shadow-md' 
-          : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-      }`}
-      onClick={onClick}
+    <motion.div
+      whileTap={{ scale: 0.96 }}
     >
-      <div className={`${active ? 'text-white' : 'text-slate-400'}`}>
-        {icon}
-      </div>
-      <span className="font-semibold text-sm tracking-tight">{label}</span>
-      {active && <motion.div layoutId="nav-pill" className="ml-auto w-1 h-1 bg-white rounded-full" />}
-    </Button>
+      <Button 
+        variant="ghost" 
+        className={`w-full justify-start gap-3 h-11 rounded-xl px-4 transition-all duration-300 relative overflow-hidden ${
+          active 
+            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' 
+            : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+        }`}
+        onClick={onClick}
+      >
+        <div className={`${active ? 'text-white' : 'text-slate-400'}`}>
+          {icon}
+        </div>
+        <span className="font-semibold text-sm tracking-tight">{label}</span>
+        {active && (
+          <motion.div 
+            layoutId="nav-pill" 
+            className="ml-auto w-1 h-1 bg-white rounded-full"
+            transition={{ type: "spring", bounce: 0.4, duration: 0.6 }}
+          />
+        )}
+      </Button>
+    </motion.div>
   );
 }

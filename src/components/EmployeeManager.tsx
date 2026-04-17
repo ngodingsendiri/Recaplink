@@ -68,6 +68,29 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
   throw new Error(JSON.stringify(errInfo));
 }
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 15 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 260,
+      damping: 20
+    }
+  }
+};
+
 export default function EmployeeManager() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [isAdding, setIsAdding] = useState(false);
@@ -355,12 +378,13 @@ export default function EmployeeManager() {
         </div>
       </div>
 
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {isAdding && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, height: 0, y: -20 }}
+            animate={{ opacity: 1, height: 'auto', y: 0 }}
+            exit={{ opacity: 0, height: 0, y: -20 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
             className="overflow-hidden"
           >
             <Card className="rounded-2xl border-slate-100 shadow-lg overflow-hidden bg-white">
@@ -495,25 +519,38 @@ export default function EmployeeManager() {
                     <TableHead className="text-right pr-6 font-bold text-slate-400 uppercase tracking-widest text-[10px] bg-slate-50/90 backdrop-blur-sm">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody>
+                <motion.tbody 
+                  variants={containerVariants} 
+                  initial="hidden" 
+                  animate="visible"
+                  className="[&_tr:last-child]:border-0"
+                >
                   {employees.length === 0 ? (
-                    <TableRow>
+                    <motion.tr variants={itemVariants} className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
                       <TableCell colSpan={5} className="h-48 text-center text-slate-400">
                         <div className="flex flex-col items-center gap-2">
                           <Users size={24} className="opacity-20" />
                           <p className="text-xs font-medium">Belum ada data pegawai</p>
                         </div>
                       </TableCell>
-                    </TableRow>
+                    </motion.tr>
                   ) : (
                     employees.slice().sort((a, b) => a.name.localeCompare(b.name)).map((emp, index) => (
-                      <TableRow key={emp.id} className="group hover:bg-slate-50/30 transition-all border-slate-50">
+                      <motion.tr 
+                        key={emp.id} 
+                        variants={itemVariants}
+                        whileHover={{ backgroundColor: "rgba(241, 245, 249, 0.5)" }}
+                        className="group transition-all border-b border-slate-50"
+                      >
                         <TableCell className="pl-6 py-3">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 font-mono font-bold text-[10px]">
+                            <motion.div 
+                              className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 font-mono font-bold text-[10px]"
+                              whileHover={{ scale: 1.1, rotate: 5 }}
+                            >
                               {index + 1}
-                            </div>
-                            <div className="font-bold text-slate-900 text-sm">{emp.name}</div>
+                            </motion.div>
+                            <div className="font-bold text-slate-900 text-sm whitespace-nowrap">{emp.name}</div>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -558,10 +595,10 @@ export default function EmployeeManager() {
                             </Button>
                           </div>
                         </TableCell>
-                      </TableRow>
+                      </motion.tr>
                     ))
                   )}
-                </TableBody>
+                </motion.tbody>
               </Table>
             </div>
           </div>
@@ -571,27 +608,40 @@ export default function EmployeeManager() {
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {deleteConfirmId && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden"
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: "spring", stiffness: 400, damping: 28 }}
+              className="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden"
             >
-              <div className="p-6 text-center space-y-4">
-                <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <Trash2 size={28} className="text-red-500" />
-                </div>
-                <h3 className="text-lg font-bold text-slate-900">Hapus Pegawai?</h3>
-                <p className="text-xs text-slate-500">
+              <div className="p-8 text-center space-y-4">
+                <motion.div 
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.1, type: "spring" }}
+                  className="w-20 h-20 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-2 rotate-3"
+                >
+                  <Trash2 size={32} className="text-red-500" />
+                </motion.div>
+                <h3 className="text-xl font-black text-slate-900 tracking-tight">Hapus Pegawai?</h3>
+                <p className="text-xs font-medium text-slate-400 leading-relaxed px-4">
                   Tindakan ini tidak dapat dibatalkan. Data pegawai akan dihapus secara permanen dari sistem.
                 </p>
               </div>
-              <div className="p-4 bg-slate-50/50 border-t border-slate-100 flex gap-3">
-                <Button variant="outline" onClick={cancelDelete} className="flex-1 font-bold text-xs rounded-xl h-11 border-slate-200">
+              <div className="p-5 bg-slate-50/50 border-t border-slate-100 flex gap-3">
+                <Button 
+                  variant="outline" 
+                  onClick={cancelDelete} 
+                  className="flex-1 font-bold text-xs rounded-2xl h-12 border-slate-200 hover:bg-white active:scale-95 transition-all"
+                >
                   Batal
                 </Button>
-                <Button onClick={executeDelete} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl h-11 shadow-lg shadow-red-100 border-none">
+                <Button 
+                  onClick={executeDelete} 
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-2xl h-12 shadow-xl shadow-red-100 border-none active:scale-95 transition-all"
+                >
                   Hapus
                 </Button>
               </div>
