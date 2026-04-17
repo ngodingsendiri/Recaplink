@@ -657,19 +657,55 @@ export default function EngagementDashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-        {/* Floating Mobile Menu Button */}
-        <Button 
-          variant="outline" 
-          size="icon" 
-          className="fixed top-4 left-4 z-40 lg:hidden bg-white/80 backdrop-blur-md shadow-sm border-slate-200 rounded-xl" 
-          onClick={() => setIsSidebarOpen(true)}
-        >
-          <Menu className="text-slate-600" size={20} />
-        </Button>
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative pb-20 lg:pb-0">
+        {/* Sticky App Header - Modern Mobile Style */}
+        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-100 px-4 h-16 flex items-center justify-between lg:px-8 lg:h-20">
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="lg:hidden rounded-lg h-9 w-9 text-slate-500 hover:bg-slate-50" 
+              onClick={() => setIsSidebarOpen(true)}
+            >
+              <Menu size={20} />
+            </Button>
+            <div className="flex flex-col">
+              <h2 className="text-base lg:text-xl font-bold text-slate-900 tracking-tight leading-none">
+                {activeTab === 'dashboard' && 'Beranda'}
+                {activeTab === 'overview' && 'Input Rekap'}
+                {activeTab === 'daily-report' && 'Laporan Harian'}
+                {activeTab === 'reports' && 'Laporan Mingguan'}
+                {activeTab === 'employees' && 'Data Pegawai'}
+                {activeTab === 'settings' && 'Pengaturan'}
+              </h2>
+              <span className="lg:hidden text-[9px] font-bold text-indigo-500 uppercase tracking-widest mt-1">RecapLink Smart</span>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:flex flex-col items-end mr-2">
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Status</p>
+              <div className="flex items-center gap-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[9px] font-bold text-slate-600">Online</span>
+              </div>
+            </div>
+            {user && (
+              <div className="flex items-center gap-2 bg-slate-50 p-1 pr-3 rounded-full border border-slate-100">
+                <img 
+                  src={user.photoURL || ''} 
+                  alt="Profile" 
+                  className="w-7 h-7 lg:w-9 lg:h-9 rounded-full border-2 border-white shadow-sm" 
+                  referrerPolicy="no-referrer" 
+                />
+                <span className="hidden md:block text-xs font-bold text-slate-700">{user.displayName?.split(' ')[0]}</span>
+              </div>
+            )}
+          </div>
+        </header>
 
-        <div className="flex-1 overflow-y-auto overflow-x-hidden">
-          <div className="p-4 md:p-8 max-w-7xl mx-auto w-full pt-16 lg:pt-8">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth">
+          <div className="px-4 py-6 md:p-8 lg:p-12 max-w-[1600px] mx-auto w-full">
             <AnimatePresence mode="wait">
               {activeTab === 'dashboard' && (
                 <motion.div
@@ -686,7 +722,7 @@ export default function EngagementDashboard() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
                     <StatCard 
                       title="Total Pegawai" 
                       value={stats.totalEmployees.toString()} 
@@ -866,24 +902,25 @@ export default function EngagementDashboard() {
                   {/* Input Modal */}
                   <AnimatePresence>
                     {isInputModalOpen && (
-                      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                      <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm p-0 sm:p-4">
                         <motion.div
-                          initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                          animate={{ opacity: 1, scale: 1, y: 0 }}
-                          exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                          className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+                          initial={{ opacity: 0, y: '100%' }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: '100%' }}
+                          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                          className="bg-white w-full max-w-2xl rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh]"
                         >
-                          <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 shrink-0">
+                          <div className="p-5 sm:p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/20 shrink-0">
                             <div>
-                              <h3 className="text-lg font-bold text-slate-900">Input Rekapitulasi</h3>
-                              <p className="text-xs text-slate-500">{new Date(selectedDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                              <h3 className="text-base sm:text-lg font-black text-slate-900 leading-tight">Input Rekapitulasi</h3>
+                              <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">{new Date(selectedDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                             </div>
-                            <Button variant="ghost" size="icon" onClick={closeInputModal} className="rounded-full">
-                              <XCircle className="text-slate-400" size={20} />
+                            <Button variant="ghost" size="icon" onClick={closeInputModal} className="rounded-full bg-slate-100 hover:bg-slate-200 h-9 w-9">
+                              <X className="text-slate-600" size={18} />
                             </Button>
                           </div>
                           
-                          <div className="p-6 space-y-6 overflow-y-auto">
+                          <div className="p-4 sm:p-6 space-y-5 sm:space-y-6 overflow-y-auto pb-safe">
                             {/* Meta API Fetch Section */}
                             <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 space-y-4">
                               <div className="flex items-center justify-between">
@@ -1111,34 +1148,34 @@ export default function EngagementDashboard() {
                           <ChevronRight size={16} />
                         </Button>
                       </div>
-                      <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-auto">
-                        <div className="flex bg-slate-100 p-1 rounded-xl w-full sm:w-auto justify-center sm:justify-start">
-                          <button 
-                            onClick={() => setWeeklySortMode('bidang')}
-                            className={cn("flex-1 sm:flex-none px-3 py-1.5 text-xs font-bold rounded-lg transition-all", weeklySortMode === 'bidang' ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700")}
-                          >
-                            Bidang
-                          </button>
-                          <button 
-                            onClick={() => setWeeklySortMode('name')}
-                            className={cn("flex-1 sm:flex-none px-3 py-1.5 text-xs font-bold rounded-lg transition-all", weeklySortMode === 'name' ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700")}
-                          >
-                            Nama
-                          </button>
-                        </div>
-                        <div className="flex gap-2 w-full sm:w-auto">
-                          <Button onClick={() => handleExportPDF(printDailyRef, `recaplink-harian-${getLocalISODate(currentDailyDate)}`)} disabled={isLoading} className="flex-1 sm:flex-none gap-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-4 h-11 shadow-md font-bold text-xs border-none">
-                            <FileText size={14} />
-                            Export PDF
-                          </Button>
-                          <Button onClick={() => handleExportImage(printDailyRef, `recaplink-harian-${getLocalISODate(currentDailyDate)}`)} disabled={isLoading} variant="outline" className="flex-1 sm:flex-none gap-2 border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl px-4 h-11 font-bold text-xs">
-                            <ImageIcon size={14} />
-                            Save Image
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                              <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-auto">
+                                <div className="flex bg-slate-100 p-1.5 rounded-xl w-full sm:w-auto justify-center sm:justify-start">
+                                  <button 
+                                    onClick={() => setWeeklySortMode('bidang')}
+                                    className={cn("flex-1 sm:flex-none px-4 py-2 text-[10px] font-bold rounded-lg transition-all uppercase tracking-widest", weeklySortMode === 'bidang' ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                                  >
+                                    Bidang
+                                  </button>
+                                  <button 
+                                    onClick={() => setWeeklySortMode('name')}
+                                    className={cn("flex-1 sm:flex-none px-4 py-2 text-[10px] font-bold rounded-lg transition-all uppercase tracking-widest", weeklySortMode === 'name' ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                                  >
+                                    Nama
+                                  </button>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
+                                  <Button onClick={() => handleExportPDF(printDailyRef, `recaplink-harian-${getLocalISODate(currentDailyDate)}`)} disabled={isLoading} className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl h-12 shadow-lg shadow-indigo-100 font-bold text-[10px] uppercase tracking-widest border-none">
+                                    <FileText size={14} />
+                                    PDF
+                                  </Button>
+                                  <Button onClick={() => handleExportImage(printDailyRef, `recaplink-harian-${getLocalISODate(currentDailyDate)}`)} disabled={isLoading} variant="outline" className="gap-2 border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl h-12 font-bold text-[10px] uppercase tracking-widest">
+                                    <ImageIcon size={14} />
+                                    IMG
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
 
                   <div ref={printDailyRef} className={cn("bg-white rounded-2xl shadow-sm border border-slate-100 min-h-[400px] md:min-h-[600px] flex flex-col", isExporting ? "p-4 md:p-6 w-max" : "p-4 sm:p-6 md:p-10")}>
                     <div className={cn("flex justify-between border-b border-slate-100 gap-2", isExporting ? "flex-row items-center mb-3 pb-3" : "flex-col md:flex-row items-start md:items-center mb-8 pb-6")}>
@@ -1270,28 +1307,28 @@ export default function EngagementDashboard() {
                         </Button>
                       </div>
                       <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-auto">
-                        <div className="flex bg-slate-100 p-1 rounded-xl w-full sm:w-auto justify-center sm:justify-start">
+                        <div className="flex bg-slate-100 p-1.5 rounded-xl w-full sm:w-auto justify-center sm:justify-start">
                           <button 
                             onClick={() => setWeeklySortMode('bidang')}
-                            className={cn("flex-1 sm:flex-none px-3 py-1.5 text-xs font-bold rounded-lg transition-all", weeklySortMode === 'bidang' ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                            className={cn("flex-1 sm:flex-none px-4 py-2 text-[10px] font-bold rounded-lg transition-all uppercase tracking-widest", weeklySortMode === 'bidang' ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700")}
                           >
                             Bidang
                           </button>
                           <button 
                             onClick={() => setWeeklySortMode('name')}
-                            className={cn("flex-1 sm:flex-none px-3 py-1.5 text-xs font-bold rounded-lg transition-all", weeklySortMode === 'name' ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                            className={cn("flex-1 sm:flex-none px-4 py-2 text-[10px] font-bold rounded-lg transition-all uppercase tracking-widest", weeklySortMode === 'name' ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700")}
                           >
                             Nama
                           </button>
                         </div>
-                        <div className="flex gap-2 w-full sm:w-auto">
-                          <Button onClick={() => handleExportPDF(printRef, `recaplink-mingguan-${new Date().toISOString().split('T')[0]}`)} disabled={isLoading} className="flex-1 sm:flex-none gap-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-4 h-11 shadow-md font-bold text-xs border-none">
+                        <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
+                          <Button onClick={() => handleExportPDF(printRef, `recaplink-mingguan-${new Date().toISOString().split('T')[0]}`)} disabled={isLoading} className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl h-12 shadow-lg shadow-indigo-100 font-bold text-[10px] uppercase tracking-widest border-none">
                             <FileText size={14} />
-                            Export PDF
+                            PDF
                           </Button>
-                          <Button onClick={() => handleExportImage(printRef, `recaplink-mingguan-${new Date().toISOString().split('T')[0]}`)} disabled={isLoading} variant="outline" className="flex-1 sm:flex-none gap-2 border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl px-4 h-11 font-bold text-xs">
+                          <Button onClick={() => handleExportImage(printRef, `recaplink-mingguan-${new Date().toISOString().split('T')[0]}`)} disabled={isLoading} variant="outline" className="gap-2 border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl h-12 font-bold text-[10px] uppercase tracking-widest">
                             <ImageIcon size={14} />
-                            Save Image
+                            IMG
                           </Button>
                         </div>
                       </div>
@@ -1440,8 +1477,62 @@ export default function EngagementDashboard() {
         </div>
       </div>
     </main>
+      {/* Bottom Navigation for Mobile */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-t border-slate-100 px-4 h-20 flex items-center justify-around pb-safe">
+        <BottomNavItem 
+          active={activeTab === 'dashboard'} 
+          onClick={() => setActiveTab('dashboard')} 
+          icon={<LayoutDashboard size={22} />} 
+          label="Home" 
+        />
+        <BottomNavItem 
+          active={activeTab === 'overview'} 
+          onClick={() => setActiveTab('overview')} 
+          icon={<PlusCircle size={22} />} 
+          label="Input" 
+        />
+        <BottomNavItem 
+          active={activeTab === 'daily-report'} 
+          onClick={() => setActiveTab('daily-report')} 
+          icon={<FileText size={22} />} 
+          label="Harian" 
+        />
+        <BottomNavItem 
+          active={activeTab === 'reports'} 
+          onClick={() => setActiveTab('reports')} 
+          icon={<History size={22} />} 
+          label="Mingguan" 
+        />
+      </nav>
+
       <Toaster position="bottom-center" duration={2000} />
     </div>
+  );
+}
+
+function BottomNavItem({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string }) {
+  return (
+    <button 
+      onClick={onClick}
+      className={cn(
+        "flex flex-col items-center justify-center gap-1 w-full h-full transition-all duration-200 relative",
+        active ? "text-indigo-600" : "text-slate-400"
+      )}
+    >
+      <div className={cn(
+        "transition-transform duration-200",
+        active ? "scale-110 -translate-y-0.5" : "scale-100"
+      )}>
+        {icon}
+      </div>
+      <span className={cn("text-[10px] font-bold uppercase tracking-widest", active ? "opacity-100" : "opacity-70")}>{label}</span>
+      {active && (
+        <motion.div 
+          layoutId="bottom-nav-indicator"
+          className="absolute -top-[1px] left-1/2 -translate-x-1/2 w-10 h-1 bg-indigo-600 rounded-b-full shadow-[0_4px_12px_rgba(79,70,229,0.3)]"
+        />
+      )}
+    </button>
   );
 }
 
@@ -1454,17 +1545,17 @@ function StatCard({ title, value, icon, color }: { title: string, value: string,
   };
 
   return (
-    <Card className="border-slate-100/50 shadow-sm rounded-2xl overflow-hidden group hover:shadow-md transition-all bg-white">
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className={`p-2.5 rounded-xl ${colorMap[color]} transition-transform group-hover:scale-110 border`}>
-            {icon}
+    <Card className="border-slate-100/50 shadow-sm rounded-2xl overflow-hidden group hover:shadow-md transition-all bg-white relative">
+      <CardContent className="p-4 md:p-6">
+        <div className="flex items-center justify-between mb-3 md:mb-4">
+          <div className={`p-2 md:p-2.5 rounded-xl ${colorMap[color]} transition-transform group-hover:scale-110 border shrink-0`}>
+            {React.cloneElement(icon as React.ReactElement, { size: 18 })}
           </div>
-          <Badge variant="ghost" className="text-[9px] uppercase tracking-widest font-bold text-slate-300">Live</Badge>
+          <div className="w-1.5 h-1.5 rounded-full bg-slate-200 absolute top-4 right-4" />
         </div>
         <div className="space-y-0.5">
-          <div className="text-2xl font-bold text-slate-900 tracking-tight">{value}</div>
-          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{title}</div>
+          <div className="text-xl md:text-2xl font-black text-slate-900 tracking-tight leading-tight">{value}</div>
+          <div className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-tighter sm:tracking-wider">{title}</div>
         </div>
       </CardContent>
     </Card>
