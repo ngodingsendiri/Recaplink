@@ -339,11 +339,11 @@ export default function EmployeeManager() {
   return (
     <div className="space-y-6 md:space-y-8">
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-        <div className="space-y-0.5">
+        <div className="lg:hidden space-y-0.5">
           <h2 className="text-xl font-bold tracking-tight text-slate-900">Database Pegawai</h2>
           <p className="text-slate-500 text-xs">Kelola data pegawai untuk monitoring engagement kolektif</p>
         </div>
-        <div className="flex flex-wrap gap-2 w-full lg:w-auto">
+        <div className="flex flex-wrap gap-2 w-full lg:w-auto lg:ml-auto">
           <Button variant="outline" size="sm" onClick={downloadTemplate} className="flex-1 md:flex-none gap-2 rounded-xl border-slate-200 hover:bg-slate-50 text-slate-600 h-11 px-4 text-xs font-bold">
             <FileSpreadsheet size={14} className="text-emerald-600" />
             Template Excel

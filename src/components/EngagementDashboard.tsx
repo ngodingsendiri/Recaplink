@@ -111,6 +111,37 @@ export default function EngagementDashboard() {
   // Meta API State
   const [metaToken, setMetaToken] = useState('');
   const [isFetchingMeta, setIsFetchingMeta] = useState(false);
+  const [isSavingToken, setIsSavingToken] = useState(false);
+
+  // Load Meta Token from Firestore on mount
+  useEffect(() => {
+    if (loading || !user) return;
+
+    const unsubscribe = onSnapshot(doc(db, 'settings', 'meta_api'), (docSnap) => {
+      if (docSnap.exists()) {
+        setMetaToken(docSnap.data().value || '');
+      }
+    });
+
+    return unsubscribe;
+  }, [user, loading]);
+
+  const handleSaveMetaToken = async () => {
+    if (!user) return;
+    setIsSavingToken(true);
+    try {
+      await setDoc(doc(db, 'settings', 'meta_api'), {
+        value: metaToken,
+        updatedAt: serverTimestamp()
+      });
+      toast.success("Token API Meta berhasil disimpan ke server");
+    } catch (err) {
+      console.error("Error saving meta token:", err);
+      toast.error("Gagal menyimpan token ke server");
+    } finally {
+      setIsSavingToken(false);
+    }
+  };
 
   const igInputRef = useRef<HTMLTextAreaElement>(null);
   const fbInputRef = useRef<HTMLTextAreaElement>(null);
@@ -749,7 +780,7 @@ export default function EngagementDashboard() {
                   exit="hidden"
                   className="space-y-6 md:space-y-10"
                 >
-                  <motion.div variants={itemVariants} className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                  <motion.div variants={itemVariants} className="lg:hidden flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                     <div className="space-y-0.5">
                       <h2 className="text-xl font-bold tracking-tight text-slate-900">Dashboard Utama</h2>
                       <p className="text-slate-500 text-xs">Ringkasan statistik dan tren engagement pegawai</p>
@@ -862,12 +893,12 @@ export default function EngagementDashboard() {
                   className="space-y-6 md:space-y-8"
                 >
                   <motion.div variants={itemVariants} className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                    <div className="space-y-0.5">
+                    <div className="lg:hidden space-y-0.5">
                       <h2 className="text-xl font-bold tracking-tight text-slate-900">Rekap Harian</h2>
                       <p className="text-slate-500 text-xs">Pilih tanggal pada kalender untuk mengisi atau melihat data rekapitulasi</p>
                     </div>
                     
-                    <div className="flex items-center gap-4 bg-slate-50 p-1.5 rounded-xl border border-slate-100 w-full md:w-auto justify-between">
+                    <div className="flex items-center gap-4 bg-slate-50 p-1.5 rounded-xl border border-slate-100 w-full md:w-auto justify-between lg:ml-auto">
                       <Button variant="ghost" size="icon" onClick={() => changeMonth(-1)} className="rounded-lg h-8 w-8 text-slate-600 hover:bg-white shrink-0 shadow-sm">
                         <ChevronLeft size={16} />
                       </Button>
@@ -970,15 +1001,22 @@ export default function EngagementDashboard() {
                                 <Badge variant="outline" className="bg-indigo-100 text-indigo-700 border-indigo-200 text-[9px]">Otomatis</Badge>
                               </div>
 
-                              <div className="space-y-2">
+                              <div className="space-y-2 relative">
                                 <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Access Token Meta API</label>
-                                <input 
-                                  type="password"
+                                <textarea 
                                   value={metaToken}
                                   onChange={(e) => setMetaToken(e.target.value)}
-                                  placeholder="Paste token Meta API di sini (opsional jika sudah diset di Environment Variables)..."
-                                  className="w-full h-10 px-3 rounded-lg border border-indigo-200 bg-white text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                                  placeholder="Paste token Meta API di sini..."
+                                  className="w-full h-12 px-3 pb-6 rounded-lg border border-indigo-200 bg-white text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-none pt-2.5"
                                 />
+                                <Button 
+                                  onClick={handleSaveMetaToken}
+                                  disabled={isSavingToken || !metaToken}
+                                  variant="outline"
+                                  className="absolute right-1 bottom-1 h-6 px-2 text-[9px] font-bold border-indigo-200 text-indigo-600 hover:bg-indigo-50 bg-white"
+                                >
+                                  {isSavingToken ? 'Saving...' : 'Simpan ke Server'}
+                                </Button>
                               </div>
                               
                               <div className="flex flex-col gap-3">
@@ -1164,12 +1202,12 @@ export default function EngagementDashboard() {
                   className="space-y-6 md:space-y-8"
                 >
                   <motion.div variants={itemVariants} className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100">
-                    <div className="space-y-0.5">
+                    <div className="lg:hidden space-y-0.5">
                       <h2 className="text-xl font-bold tracking-tight text-slate-900">Laporan Harian</h2>
                       <p className="text-slate-500 text-xs">Unduh dan lihat rekapitulasi engagement harian</p>
                     </div>
                     
-                    <div className="flex flex-col xl:flex-row items-start xl:items-center gap-4 w-full lg:w-auto">
+                    <div className="flex flex-col xl:flex-row items-start xl:items-center gap-4 w-full lg:w-auto lg:ml-auto">
                       <div className="flex items-center gap-2 md:gap-4 bg-slate-50 p-1.5 rounded-xl border border-slate-100 w-full xl:w-auto justify-between">
                         <Button variant="ghost" size="icon" onClick={() => changeDailyDate(-1)} className="rounded-lg h-8 w-8 text-slate-600 hover:bg-white shrink-0 shadow-sm">
                           <ChevronLeft size={16} />
@@ -1324,12 +1362,12 @@ export default function EngagementDashboard() {
                   className="space-y-6 md:space-y-8"
                 >
                   <motion.div variants={itemVariants} className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100">
-                    <div className="space-y-0.5">
+                    <div className="lg:hidden space-y-0.5">
                       <h2 className="text-xl font-bold tracking-tight text-slate-900">Laporan Mingguan</h2>
                       <p className="text-slate-500 text-xs">Unduh dan lihat rekapitulasi engagement mingguan</p>
                     </div>
                     
-                    <div className="flex flex-col xl:flex-row items-start xl:items-center gap-4 w-full lg:w-auto">
+                    <div className="flex flex-col xl:flex-row items-start xl:items-center gap-4 w-full lg:w-auto lg:ml-auto">
                       <div className="flex items-center gap-2 md:gap-4 bg-slate-50 p-1.5 rounded-xl border border-slate-100 w-full xl:w-auto justify-between">
                         <Button variant="ghost" size="icon" onClick={() => changeWeek(-1)} className="rounded-lg h-8 w-8 text-slate-600 hover:bg-white shrink-0 shadow-sm">
                           <ChevronLeft size={16} />
@@ -1505,7 +1543,7 @@ export default function EngagementDashboard() {
                 className="space-y-8"
               >
                 <div className="bg-white rounded-[2.5rem] p-4 sm:p-10 border border-slate-100 shadow-sm">
-                  <div className="flex items-center gap-4 mb-8">
+                  <div className="lg:hidden flex items-center gap-4 mb-8">
                     <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center">
                       <Settings className="text-indigo-600" size={24} />
                     </div>

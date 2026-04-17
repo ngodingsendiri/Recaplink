@@ -23,6 +23,8 @@
         "date": { "type": "string", "format": "date" },
         "igRawText": { "type": "string" },
         "fbRawText": { "type": "string" },
+        "igLinks": { "type": "array", "items": { "type": "string" } },
+        "fbLinks": { "type": "array", "items": { "type": "string" } },
         "igEngagedEmployeeIds": { 
           "type": "array",
           "items": { "type": "string" }
@@ -33,7 +35,16 @@
         },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["date", "igEngagedEmployeeIds", "fbEngagedEmployeeIds"]
+      "required": ["date"]
+    },
+    "SystemSetting": {
+      "title": "System Setting",
+      "description": "Global system configurations",
+      "type": "object",
+      "properties": {
+        "value": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
     }
   },
   "firestore": {
@@ -44,6 +55,10 @@
     "/dailyEngagement/{dateId}": {
       "schema": "DailyEngagement",
       "description": "Engagement records indexed by date (YYYY-MM-DD)"
+    },
+    "/settings/{settingId}": {
+      "schema": "SystemSetting",
+      "description": "Global settings like Meta API Token"
     }
   }
 }
