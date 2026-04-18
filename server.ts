@@ -3,6 +3,16 @@ import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
 import puppeteer from "puppeteer";
+import "dotenv/config";
+
+// Error handling for the process
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception thrown:', err);
+});
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,7 +23,11 @@ async function startServer() {
 
   app.use(express.json());
   
-  // Endpoint to fetch comments from Meta Graph API
+  // Basic health check
+  app.get("/api/health", (req, res) => {
+    res.json({ status: "ok", time: new Date().toISOString() });
+  });
+  
   // Endpoint to fetch recent posts and their comments automatically
   app.post("/api/meta/fetch-recent", async (req, res) => {
     try {

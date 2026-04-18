@@ -272,6 +272,18 @@ export default function EngagementDashboard() {
         body: JSON.stringify({ date: selectedDate, token: metaToken })
       });
       
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await res.text();
+        console.error("Non-JSON response from API:", text);
+        
+        if (text.includes("The page could not be found") || res.status === 404) {
+          throw new Error(`API tidak ditemukan (404). Pastikan server backend berjalan dengan benar.`);
+        }
+        
+        throw new Error(`Respon server tidak valid (${res.status}). Silakan hubungi admin.`);
+      }
+
       const data = await res.json();
       
       if (!res.ok) {
