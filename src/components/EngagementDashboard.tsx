@@ -269,35 +269,96 @@ export default function EngagementDashboard() {
     const timeoutId = setTimeout(() => controller.abort(), 60000);
 
     try {
-      const res = await fetch('/api/meta/fetch-recent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: selectedDate, token: metaToken }),
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-      const contentType = res.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await res.text();
-        console.error("Non-JSON response from API:", text);
-        
-        if (text.includes("The page could not be found") || res.status === 404) {
-          throw new Error(`API tidak ditemukan (404). Pastikan server backend berjalan dengan benar.`);
+      if (!metaToken) throw new Error("Token API Meta tidak boleh kosong.");
+
+      // Helper function for date matching (15:00 H-1 to 15:00 D-Day WIB)
+      const isWithinCustomWindow = (postDateStr: string, targetDateStr: string) => {
+        if (!postDateStr) return false;
+        const postTime = new Date(postDateStr).getTime();
+        const endDate = new Date(`${targetDateStr}T08:00:00Z`);
+        const endTime = endDate.getTime();
+        const startTime = endTime - (24 * 60 * 60 * 1000);
+        return postTime >= startTime && postTime <= endTime;
+      };
+
+      let fbPosts: any[] = [];
+      let igPosts: any[] = [];
+      let pageToken = metaToken;
+      let pageId = "me";
+
+      // Resolve Page Token
+      try {
+        const accRes = await fetch(`https://graph.facebook.com/v19.0/me/accounts?access_token=${metaToken}`, { signal: controller.signal });
+        const accData = await accRes.json();
+        if (accData.data && accData.data.length > 0) {
+          pageId = accData.data[0].id;
+          pageToken = accData.data[0].access_token;
+        } else {
+          const debugRes = await fetch(`https://graph.facebook.com/v19.0/debug_token?input_token=${metaToken}&access_token=${metaToken}`, { signal: controller.signal });
+          const debugData = await debugRes.json();
+          if (debugData.data && debugData.data.granular_scopes) {
+            const scope = debugData.data.granular_scopes.find((s: any) => s.scope === 'pages_show_list' || s.scope === 'pages_read_engagement' || s.scope === 'pages_manage_posts');
+            if (scope && scope.target_ids && scope.target_ids.length > 0) {
+              pageId = scope.target_ids[0];
+              const pageRes = await fetch(`https://graph.facebook.com/v19.0/${pageId}?fields=access_token&access_token=${metaToken}`, { signal: controller.signal });
+              const pageData = await pageRes.json();
+              if (pageData.access_token) pageToken = pageData.access_token;
+            }
+          }
         }
-        
-        throw new Error(`Respon server tidak valid (${res.status}). Silakan hubungi admin.`);
+      } catch (e) {
+        console.log("Not a user token, continuing with original token.");
       }
 
-      const data = await res.json();
-      
-      if (!res.ok) {
-        throw new Error(data.error || 'Gagal mengambil data dari Meta API');
+      // Fetch FB Posts
+      const fbPostsRes = await fetch(`https://graph.facebook.com/v19.0/${pageId}/posts?fields=id,created_time,permalink_url&access_token=${pageToken}&limit=50`, { signal: controller.signal });
+      const fbPostsData = await fbPostsRes.json();
+      let latestFbPostDate = null;
+
+      if (!fbPostsData.error && fbPostsData.data) {
+        if (fbPostsData.data.length > 0) latestFbPostDate = fbPostsData.data[0].created_time;
+        fbPosts = fbPostsData.data.filter((p: any) => isWithinCustomWindow(p.created_time, selectedDate));
       }
-      
-      const { commenters, fbLinks: newFbLinks, igLinks: newIgLinks, fbPostCount, igPostCount, debug } = data;
+
+      // Fetch IG Account ID
+      const igAccRes = await fetch(`https://graph.facebook.com/v19.0/${pageId}?fields=instagram_business_account&access_token=${pageToken}`, { signal: controller.signal });
+      const igAccData = await igAccRes.json();
+      const igAccountId = igAccData.instagram_business_account?.id;
+
+      if (igAccountId) {
+        // Fetch IG Posts
+        const igPostsRes = await fetch(`https://graph.facebook.com/v19.0/${igAccountId}/media?fields=id,timestamp,permalink&access_token=${pageToken}&limit=50`, { signal: controller.signal });
+        const igPostsData = await igPostsRes.json();
+        if (!igPostsData.error && igPostsData.data) {
+          igPosts = igPostsData.data.filter((p: any) => isWithinCustomWindow(p.timestamp, selectedDate));
+        }
+      }
+
+      if (fbPostsData.error && !igAccountId) {
+        throw new Error(fbPostsData.error?.message || "Gagal mengakses data Page/Instagram.");
+      }
+
+      const commenters: any[] = [];
+      const newFbLinks = fbPosts.map((p: any) => p.permalink_url).filter(Boolean);
+      const newIgLinks = igPosts.map((p: any) => p.permalink).filter(Boolean);
+
+      // Fetch IG comments
+      for (const post of igPosts) {
+        const commentsRes = await fetch(`https://graph.facebook.com/v19.0/${post.id}/comments?fields=id,text,username,timestamp&access_token=${pageToken}&limit=100`, { signal: controller.signal });
+        const commentsData = await commentsRes.json();
+        (commentsData.data || []).forEach((c: any) => {
+          commenters.push({ platform: 'ig', username: c.username || "Unknown", text: c.text });
+        });
+      }
+
+      clearTimeout(timeoutId);
+
+      const fbPostCount = fbPosts.length;
+      const igPostCount = igPosts.length;
+      const debug = { igLinked: !!igAccountId, latestFbPostDate };
       
       // Update Links
+
       if (newIgLinks && newIgLinks.length > 0) {
         setIgLinks(prev => Array.from(new Set([...prev, ...newIgLinks])));
       }
