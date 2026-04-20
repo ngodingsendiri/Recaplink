@@ -204,6 +204,16 @@ export default function EmployeeManager() {
     });
     setEditingId(emp.id);
     setIsAdding(true);
+    
+    // Smooth scroll to form on mobile/desktop
+    setTimeout(() => {
+      const element = document.getElementById('employee-form');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 100);
   };
 
   const downloadTemplate = () => {
@@ -370,7 +380,16 @@ export default function EmployeeManager() {
             </label>
           </div>
           {!isAdding && (
-            <Button size="sm" onClick={() => setIsAdding(true)} className="w-full md:w-auto gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-md h-11 px-6 text-xs font-bold border-none">
+            <Button 
+              size="sm" 
+              onClick={() => {
+                setIsAdding(true);
+                setTimeout(() => {
+                  document.getElementById('employee-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+              }} 
+              className="w-full md:w-auto gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-md h-11 px-6 text-xs font-bold border-none transition-all active:scale-95"
+            >
               <UserPlus size={14} />
               Tambah Pegawai
             </Button>
@@ -381,6 +400,7 @@ export default function EmployeeManager() {
       <AnimatePresence mode="wait">
         {isAdding && (
           <motion.div
+            id="employee-form"
             initial={{ opacity: 0, height: 0, y: -20 }}
             animate={{ opacity: 1, height: 'auto', y: 0 }}
             exit={{ opacity: 0, height: 0, y: -20 }}
@@ -507,99 +527,176 @@ export default function EmployeeManager() {
 
       <Card className="rounded-2xl border-slate-100 shadow-sm overflow-hidden bg-white">
         <CardContent className="p-0">
-          <div className="overflow-x-auto overflow-y-auto max-h-[600px]">
-            <div className="min-w-[800px]">
-              <Table>
-                <TableHeader className="bg-slate-50/50 sticky top-0 z-10 shadow-sm">
-                  <TableRow className="hover:bg-transparent border-slate-100">
-                    <TableHead className="pl-6 py-4 font-bold text-slate-400 uppercase tracking-widest text-[10px] bg-slate-50/90 backdrop-blur-sm">Pegawai</TableHead>
-                    <TableHead className="font-bold text-slate-400 uppercase tracking-widest text-[10px] bg-slate-50/90 backdrop-blur-sm">Bidang</TableHead>
-                    <TableHead className="font-bold text-slate-400 uppercase tracking-widest text-[10px] bg-slate-50/90 backdrop-blur-sm">Identitas</TableHead>
-                    <TableHead className="font-bold text-slate-400 uppercase tracking-widest text-[10px] bg-slate-50/90 backdrop-blur-sm">Sosial Media</TableHead>
-                    <TableHead className="text-right pr-6 font-bold text-slate-400 uppercase tracking-widest text-[10px] bg-slate-50/90 backdrop-blur-sm">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <motion.tbody 
-                  variants={containerVariants} 
-                  initial="hidden" 
-                  animate="visible"
-                  className="[&_tr:last-child]:border-0"
-                >
-                  {employees.length === 0 ? (
-                    <motion.tr variants={itemVariants} className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-                      <TableCell colSpan={5} className="h-48 text-center text-slate-400">
-                        <div className="flex flex-col items-center gap-2">
-                          <Users size={24} className="opacity-20" />
-                          <p className="text-xs font-medium">Belum ada data pegawai</p>
-                        </div>
-                      </TableCell>
-                    </motion.tr>
-                  ) : (
-                    employees.slice().sort((a, b) => a.name.localeCompare(b.name)).map((emp, index) => (
-                      <motion.tr 
-                        key={emp.id} 
-                        variants={itemVariants}
-                        whileHover={{ backgroundColor: "rgba(241, 245, 249, 0.5)" }}
-                        className="group transition-all border-b border-slate-50"
-                      >
-                        <TableCell className="pl-6 py-3">
-                          <div className="flex items-center gap-3">
-                            <motion.div 
-                              className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 font-mono font-bold text-[10px]"
-                              whileHover={{ scale: 1.1, rotate: 5 }}
-                            >
-                              {index + 1}
-                            </motion.div>
-                            <div className="font-bold text-slate-900 text-sm whitespace-nowrap">{emp.name}</div>
+          {/* Desktop Table - Hidden on small screens */}
+          <div className="hidden md:block">
+            <div className="overflow-x-auto overflow-y-auto max-h-[600px]">
+              <div className="min-w-[800px]">
+                <Table>
+                  <TableHeader className="bg-slate-50/50 sticky top-0 z-10 shadow-sm">
+                    <TableRow className="hover:bg-transparent border-slate-100">
+                      <TableHead className="pl-6 py-4 font-bold text-slate-400 uppercase tracking-widest text-[10px] bg-slate-50/90 backdrop-blur-sm">Pegawai</TableHead>
+                      <TableHead className="font-bold text-slate-400 uppercase tracking-widest text-[10px] bg-slate-50/90 backdrop-blur-sm">Bidang</TableHead>
+                      <TableHead className="font-bold text-slate-400 uppercase tracking-widest text-[10px] bg-slate-50/90 backdrop-blur-sm">Identitas</TableHead>
+                      <TableHead className="font-bold text-slate-400 uppercase tracking-widest text-[10px] bg-slate-50/90 backdrop-blur-sm">Sosial Media</TableHead>
+                      <TableHead className="text-right pr-6 font-bold text-slate-400 uppercase tracking-widest text-[10px] bg-slate-50/90 backdrop-blur-sm">Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <motion.tbody 
+                    variants={containerVariants} 
+                    initial="hidden" 
+                    animate="visible"
+                    className="[&_tr:last-child]:border-0"
+                  >
+                    {employees.length === 0 ? (
+                      <motion.tr variants={itemVariants} className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                        <TableCell colSpan={5} className="h-48 text-center text-slate-400">
+                          <div className="flex flex-col items-center gap-2">
+                            <Users size={24} className="opacity-20" />
+                            <p className="text-xs font-medium">Belum ada data pegawai</p>
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <span className={cn("text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase tracking-wider", getBidangColor(emp.bidang))}>
-                            {emp.bidang || 'N/A'}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <code className="text-[10px] bg-slate-50 px-2 py-0.5 rounded border border-slate-100 text-slate-500 font-mono">{emp.nip}</code>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-3">
-                            <div className="flex items-center gap-1.5 text-[10px] font-medium text-slate-500">
-                              <Instagram size={12} className={emp.igUsername ? "text-pink-500" : "text-slate-300"} />
-                              {emp.igUsername || '-'}
+                      </motion.tr>
+                    ) : (
+                      employees.slice().sort((a, b) => a.name.localeCompare(b.name)).map((emp, index) => (
+                        <motion.tr 
+                          key={emp.id} 
+                          variants={itemVariants}
+                          whileHover={{ backgroundColor: "rgba(241, 245, 249, 0.5)" }}
+                          className="group transition-all border-b border-slate-50"
+                        >
+                          <TableCell className="pl-6 py-3">
+                            <div className="flex items-center gap-3">
+                              <motion.div 
+                                className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 font-mono font-bold text-[10px]"
+                                whileHover={{ scale: 1.1, rotate: 5 }}
+                              >
+                                {index + 1}
+                              </motion.div>
+                              <div className="font-bold text-slate-900 text-sm whitespace-nowrap">{emp.name}</div>
                             </div>
-                            <div className="flex items-center gap-1.5 text-[10px] font-medium text-slate-500">
-                              <Facebook size={12} className={emp.fbName ? "text-blue-500" : "text-slate-300"} />
-                              {emp.fbName || '-'}
+                          </TableCell>
+                          <TableCell>
+                            <span className={cn("text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase tracking-wider", getBidangColor(emp.bidang))}>
+                              {emp.bidang || 'N/A'}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <code className="text-[10px] bg-slate-50 px-2 py-0.5 rounded border border-slate-100 text-slate-500 font-mono">{emp.nip}</code>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-3">
+                              <div className="flex items-center gap-1.5 text-[10px] font-medium text-slate-500">
+                                <Instagram size={12} className={emp.igUsername ? "text-pink-500" : "text-slate-300"} />
+                                {emp.igUsername || '-'}
+                              </div>
+                              <div className="flex items-center gap-1.5 text-[10px] font-medium text-slate-500">
+                                <Facebook size={12} className={emp.fbName ? "text-blue-500" : "text-slate-300"} />
+                                {emp.fbName || '-'}
+                              </div>
                             </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right pr-6">
-                          <div className="flex justify-end gap-1">
+                          </TableCell>
+                          <TableCell className="text-right pr-6">
+                            <div className="flex justify-end gap-1">
                             <Button 
-                              variant="ghost" 
+                              variant="secondary" 
                               size="icon" 
                               onClick={() => startEdit(emp)} 
-                              className="h-8 w-8 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-900 transition-all"
+                              className={cn(
+                                "h-8 w-8 rounded-lg transition-all shadow-sm",
+                                editingId === emp.id ? "bg-indigo-600 text-white" : "bg-white border border-slate-200 text-slate-400 hover:text-slate-900"
+                              )}
                               title="Edit"
                             >
                               <UserCircle size={14} />
                             </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              onClick={() => confirmDelete(emp.id)} 
-                              className="h-8 w-8 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-all"
-                              title="Hapus"
-                            >
-                              <Trash2 size={14} />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </motion.tr>
-                    ))
-                  )}
-                </motion.tbody>
-              </Table>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => confirmDelete(emp.id)} 
+                                className="h-8 w-8 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-all"
+                                title="Hapus"
+                              >
+                                <Trash2 size={14} />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </motion.tr>
+                      ))
+                    )}
+                  </motion.tbody>
+                </Table>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile Card Layout - Shown on small screens */}
+          <div className="md:hidden">
+            <div className="divide-y divide-slate-100">
+              {employees.length === 0 ? (
+                <div className="px-6 py-12 text-center text-slate-400 space-y-2">
+                  <Users size={32} className="mx-auto opacity-20" />
+                  <p className="text-xs font-medium">Belum ada data pegawai</p>
+                </div>
+              ) : (
+                employees.slice().sort((a, b) => a.name.localeCompare(b.name)).map((emp, index) => (
+                  <motion.div 
+                    key={emp.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="p-5 space-y-4"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 font-bold text-xs shrink-0">
+                          {index + 1}
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-slate-900 text-sm truncate">{emp.name}</h4>
+                          <code className="text-[10px] text-slate-400 font-mono mt-0.5 block">{emp.nip}</code>
+                        </div>
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <Button 
+                          variant="secondary" 
+                          size="icon" 
+                          onClick={() => startEdit(emp)} 
+                          className={cn(
+                            "h-10 w-10 rounded-xl transition-all active:scale-90 shadow-sm",
+                            editingId === emp.id ? "bg-indigo-600 text-white shadow-indigo-100" : "bg-white border border-slate-200 text-slate-500"
+                          )}
+                          title="Edit"
+                        >
+                          <UserCircle size={18} />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => confirmDelete(emp.id)}
+                          className="h-10 w-10 rounded-xl hover:bg-red-50 text-slate-400 hover:text-red-600 active:scale-90 transition-transform"
+                        >
+                          <Trash2 size={18} />
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-slate-50 mt-2">
+                      <span className={cn("text-[9px] font-bold px-2.5 py-1 rounded-lg uppercase tracking-wider", getBidangColor(emp.bidang))}>
+                        {emp.bidang || 'N/A'}
+                      </span>
+                      <div className="flex gap-4">
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500">
+                          <Instagram size={13} className={emp.igUsername ? "text-pink-500" : "text-slate-300"} />
+                          <span className="truncate max-w-[80px]">{emp.igUsername || '-'}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500">
+                          <Facebook size={13} className={emp.fbName ? "text-blue-500" : "text-slate-300"} />
+                          <span className="truncate max-w-[80px]">{emp.fbName || '-'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))
+              )}
             </div>
           </div>
         </CardContent>

@@ -28,6 +28,14 @@ async function startServer() {
     res.json({ status: "ok", time: new Date().toISOString() });
   });
   
+  // Logging for API requests to debug 404/500 on mobile
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      console.log(`[API REQUEST] ${req.method} ${req.path} - ${new Date().toISOString()} - UA: ${req.headers['user-agent']}`);
+    }
+    next();
+  });
+  
   // Endpoint to fetch recent posts and their comments automatically
   app.post("/api/meta/fetch-recent", async (req, res) => {
     try {
@@ -159,6 +167,12 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
+    
+    // API 404 handler - Before catch-all
+    app.all("/api/*", (req, res) => {
+      res.status(404).json({ error: `API route ${req.method} ${req.path} not found.` });
+    });
+
     app.get("*", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });

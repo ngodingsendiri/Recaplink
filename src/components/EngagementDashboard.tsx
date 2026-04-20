@@ -265,13 +265,18 @@ export default function EngagementDashboard() {
 
   const handleFetchRecentMeta = async () => {
     setIsFetchingMeta(true);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
+
     try {
       const res = await fetch('/api/meta/fetch-recent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: selectedDate, token: metaToken })
+        body: JSON.stringify({ date: selectedDate, token: metaToken }),
+        signal: controller.signal
       });
       
+      clearTimeout(timeoutId);
       const contentType = res.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         const text = await res.text();
@@ -1019,13 +1024,13 @@ export default function EngagementDashboard() {
                                   value={metaToken}
                                   onChange={(e) => setMetaToken(e.target.value)}
                                   placeholder="Paste token Meta API di sini..."
-                                  className="w-full h-12 px-3 pb-6 rounded-lg border border-indigo-200 bg-white text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-none pt-2.5"
+                                  className="w-full h-16 sm:h-12 px-3 pb-8 rounded-lg border border-indigo-200 bg-white text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-none pt-2.5"
                                 />
                                 <Button 
                                   onClick={handleSaveMetaToken}
                                   disabled={isSavingToken || !metaToken}
                                   variant="outline"
-                                  className="absolute right-1 bottom-1 h-6 px-2 text-[9px] font-bold border-indigo-200 text-indigo-600 hover:bg-indigo-50 bg-white"
+                                  className="absolute right-1 bottom-1 h-7 sm:h-6 px-3 sm:px-2 text-[10px] sm:text-[9px] font-bold border-indigo-200 text-indigo-600 hover:bg-indigo-50 bg-white rounded-lg shadow-sm"
                                 >
                                   {isSavingToken ? 'Saving...' : 'Simpan ke Server'}
                                 </Button>
