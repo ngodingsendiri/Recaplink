@@ -45,7 +45,7 @@ import EmployeeManager from './EmployeeManager';
 import { useAuth } from './FirebaseProvider';
 import { db, signIn, logout } from '../lib/firebase';
 import { collection, onSnapshot, query, orderBy, doc, setDoc, serverTimestamp, limit } from 'firebase/firestore';
-import { cn } from '@/lib/utils';
+import { cn, getBidangColor } from '@/lib/utils';
 import { 
   BarChart, 
   Bar, 
@@ -152,27 +152,6 @@ export default function EngagementDashboard() {
   const printRef = useRef<HTMLDivElement>(null);
   const printDailyRef = useRef<HTMLDivElement>(null);
 
-  const getBidangColor = (bidang?: string) => {
-    if (!bidang) return "bg-slate-100 text-slate-400";
-    
-    // Specific overrides
-    if (bidang.toLowerCase() === 'infrastruktur') return "bg-slate-200 text-slate-700";
-    if (bidang.toLowerCase() === 'sekretariat') return "bg-white text-slate-900 border border-slate-200";
-
-    const colors = [
-      "bg-pink-100 text-pink-600",
-      "bg-sky-100 text-sky-600",
-      "bg-orange-100 text-orange-600",
-      "bg-emerald-100 text-emerald-600",
-      "bg-slate-100 text-slate-600",
-    ];
-    let hash = 0;
-    for (let i = 0; i < bidang.length; i++) {
-      hash = bidang.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return colors[Math.abs(hash) % colors.length];
-  };
-
   // Load employees from Firestore
   useEffect(() => {
     if (loading || !user) {
@@ -195,13 +174,20 @@ export default function EngagementDashboard() {
       return;
     }
 
-    const q = query(collection(db, 'dailyEngagement'), orderBy('date', 'desc'), limit(30));
+    const q = query(collection(db, 'dailyEngagement'), orderBy('date', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyEngagement));
       setDailyEngagements(data);
     });
     return unsubscribe;
   }, [user, loading]);
+
+  const dailyEngagementsMap = useMemo(() => {
+    return dailyEngagements.reduce((acc, curr) => {
+      acc[curr.id] = curr;
+      return acc;
+    }, {} as Record<string, DailyEngagement>);
+  }, [dailyEngagements]);
 
   const closeInputModal = () => {
     setIsInputModalOpen(false);
@@ -236,7 +222,7 @@ export default function EngagementDashboard() {
 
   // Load raw text and links for selected date if exists
   useEffect(() => {
-    const existing = dailyEngagements.find(d => d.id === selectedDate);
+    const existing = dailyEngagementsMap[selectedDate];
     if (existing) {
       setIgRawInput(existing.igRawText || '');
       setFbRawInput(existing.fbRawText || '');
@@ -480,7 +466,7 @@ export default function EngagementDashboard() {
     });
 
     return last7Days.map(date => {
-      const engagement = dailyEngagements.find(d => d.id === date);
+      const engagement = dailyEngagementsMap[date];
       const igCount = engagement?.igEngagedEmployeeIds?.length || 0;
       const fbCount = engagement?.fbEngagedEmployeeIds?.length || 0;
       const tiktokCount = engagement?.tiktokEngagedEmployeeIds?.length || 0;
@@ -615,7 +601,7 @@ export default function EngagementDashboard() {
     for (let d = 1; d <= lastDay.getDate(); d++) {
       const date = new Date(year, month, d);
       const dateStr = getLocalISODate(date);
-      const engagement = dailyEngagements.find(e => e.id === dateStr);
+      const engagement = dailyEngagementsMap[dateStr];
       days.push({
         day: d,
         date: dateStr,
@@ -665,6 +651,8 @@ export default function EngagementDashboard() {
       isCurrentWeek: weekDates.includes(todayStr)
     }];
   }, [employees, currentWeekDate]);
+
+  const weeklyDatesList = useMemo(() => weeklyReports.flatMap(w => w.dates), [weeklyReports]);
 
   const weeklyStats = useMemo(() => {
     if (weeklyReports.length === 0) return { employeeTotals: {} as Record<string, number>, daysPassed: 1 };
@@ -1453,7 +1441,7 @@ export default function EngagementDashboard() {
                           <TableBody>
                             {sortedEmployees.map((emp) => {
                               const dateStr = getLocalISODate(currentDailyDate);
-                              const engagement = dailyEngagements.find(d => d.id === dateStr);
+                              const engagement = dailyEngagementsMap[dateStr];
                               const hasIg = engagement?.igEngagedEmployeeIds?.includes(emp.id);
                               const hasFb = engagement?.fbEngagedEmployeeIds?.includes(emp.id);
                               
@@ -1610,7 +1598,7 @@ export default function EngagementDashboard() {
                               <TableHead className="sticky left-0 z-20 bg-slate-50 border-r border-slate-100 px-3 py-2 font-bold text-slate-900 whitespace-nowrap text-[10px] uppercase tracking-wider">
                                 Nama Pegawai
                               </TableHead>
-                              {weeklyReports.flatMap(w => w.dates).map((date, dIdx) => (
+                              {weeklyDatesList.map((date, dIdx) => (
                                 <TableHead key={dIdx} className={cn(
                                   "border-r border-slate-100 text-center px-2 py-2 text-[10px] font-bold w-[1%] whitespace-nowrap",
                                   date === getLocalISODate(new Date()) ? "text-slate-900 bg-slate-100/50" : "text-slate-400"
@@ -1655,8 +1643,8 @@ export default function EngagementDashboard() {
                                     </div>
                                   </div>
                                 </TableCell>
-                                {weeklyReports.flatMap(w => w.dates).map((date, dIdx) => {
-                                  const engagement = dailyEngagements.find(d => d.id === date);
+                                {weeklyDatesList.map((date, dIdx) => {
+                                  const engagement = dailyEngagementsMap[date];
                                   const hasIg = engagement?.igEngagedEmployeeIds?.includes(emp.id);
                                   const hasFb = engagement?.fbEngagedEmployeeIds?.includes(emp.id);
                                   const hasTiktok = engagement?.tiktokEngagedEmployeeIds?.includes(emp.id);

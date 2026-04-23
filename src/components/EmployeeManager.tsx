@@ -14,7 +14,7 @@ import { useAuth } from './FirebaseProvider';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import { motion, AnimatePresence } from 'motion/react';
-import { cn } from '@/lib/utils';
+import { cn, getBidangColor } from '@/lib/utils';
 import { auth } from '../lib/firebase';
 
 enum OperationType {
@@ -136,27 +136,6 @@ export default function EmployeeManager() {
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortConfig?.field !== field) return <ArrowUpDown size={12} className="ml-1 opacity-20" />;
     return sortConfig.direction === 'asc' ? <ArrowUp size={12} className="ml-1 text-slate-900" /> : <ArrowDown size={12} className="ml-1 text-slate-900" />;
-  };
-
-  const getBidangColor = (bidang?: string) => {
-    if (!bidang) return "bg-slate-100 text-slate-400";
-    
-    // Specific overrides
-    if (bidang.toLowerCase() === 'infrastruktur') return "bg-slate-200 text-slate-700";
-    if (bidang.toLowerCase() === 'sekretariat') return "bg-white text-slate-900 border border-slate-200";
-
-    const colors = [
-      "bg-pink-100 text-pink-600",
-      "bg-sky-100 text-sky-600",
-      "bg-orange-100 text-orange-600",
-      "bg-emerald-100 text-emerald-600",
-      "bg-slate-100 text-slate-600",
-    ];
-    let hash = 0;
-    for (let i = 0; i < bidang.length; i++) {
-      hash = bidang.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return colors[Math.abs(hash) % colors.length];
   };
 
   useEffect(() => {

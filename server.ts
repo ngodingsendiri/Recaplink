@@ -1,7 +1,6 @@
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
-import puppeteer from "puppeteer";
 import "dotenv/config";
 
 // Error handling for the process
