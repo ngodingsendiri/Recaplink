@@ -655,7 +655,7 @@ export default function EngagementDashboard() {
   const weeklyDatesList = useMemo(() => weeklyReports.flatMap(w => w.dates), [weeklyReports]);
 
   const weeklyStats = useMemo(() => {
-    if (weeklyReports.length === 0) return { employeeTotals: {} as Record<string, number>, daysPassed: 1 };
+    if (weeklyReports.length === 0) return { employeeTotals: {} as Record<string, number>, maxEngagements: 3 };
     
     const weekDates = weeklyReports[0].dates;
     const todayStr = getLocalISODate(new Date());
@@ -665,24 +665,26 @@ export default function EngagementDashboard() {
       if (date <= todayStr) daysPassed++;
     });
     if (daysPassed === 0) daysPassed = 1; // Prevent division by zero
+
+    const maxEngagements = daysPassed * 3;
     
     const employeeTotals: Record<string, number> = {};
 
     employees.forEach(emp => {
-      let engagedDays = 0;
+      let totalEngagements = 0;
       weekDates.forEach(date => {
         if (date > todayStr) return;
-        const engagement = dailyEngagements.find(d => d.id === date);
-        const hasIg = engagement?.igEngagedEmployeeIds?.includes(emp.id);
-        const hasFb = engagement?.fbEngagedEmployeeIds?.includes(emp.id);
-        const hasTiktok = engagement?.tiktokEngagedEmployeeIds?.includes(emp.id);
-        if (hasIg || hasFb || hasTiktok) engagedDays++;
+        const engagement = dailyEngagementsMap[date];
+        const hasIg = engagement?.igEngagedEmployeeIds?.includes(emp.id) ? 1 : 0;
+        const hasFb = engagement?.fbEngagedEmployeeIds?.includes(emp.id) ? 1 : 0;
+        const hasTiktok = engagement?.tiktokEngagedEmployeeIds?.includes(emp.id) ? 1 : 0;
+        totalEngagements += (hasIg + hasFb + hasTiktok);
       });
-      employeeTotals[emp.id] = engagedDays;
+      employeeTotals[emp.id] = totalEngagements;
     });
 
-    return { employeeTotals, daysPassed };
-  }, [weeklyReports, employees, dailyEngagements]);
+    return { employeeTotals, maxEngagements };
+  }, [weeklyReports, employees, dailyEngagementsMap]);
 
   const changeWeek = (offset: number) => {
     const newDate = new Date(currentWeekDate);
@@ -1685,7 +1687,7 @@ export default function EngagementDashboard() {
                                 <TableCell className="border-l border-slate-100 bg-slate-50/30 text-center px-3 py-1 w-[1%] whitespace-nowrap">
                                   <div className="flex flex-col items-center justify-center">
                                     <span className="text-slate-600 text-xs font-medium">
-                                      {Math.round(((weeklyStats.employeeTotals[emp.id] || 0) / weeklyStats.daysPassed) * 100)}%
+                                      {Math.round(((weeklyStats.employeeTotals[emp.id] || 0) / weeklyStats.maxEngagements) * 100)}%
                                     </span>
                                   </div>
                                 </TableCell>
