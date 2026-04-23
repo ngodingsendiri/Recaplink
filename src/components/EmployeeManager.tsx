@@ -7,7 +7,8 @@ import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
-import { Trash2, Plus, UserPlus, Save, X, Download, Upload, FileSpreadsheet, Users, Instagram, Facebook, User, CreditCard, AtSign, UserCircle } from 'lucide-react';
+import { Trash2, Plus, UserPlus, Save, X, Download, Upload, FileSpreadsheet, Users, Instagram, Facebook, User, CreditCard, UserCircle } from 'lucide-react';
+import { TiktokIcon } from './icons/TiktokIcon';
 import { toast } from 'sonner';
 import { useAuth } from './FirebaseProvider';
 import Papa from 'papaparse';
@@ -94,7 +95,7 @@ const itemVariants = {
 export default function EmployeeManager() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [isAdding, setIsAdding] = useState(false);
-  const [formData, setFormData] = useState({ name: '', nip: '', bidang: '', igUsername: '', fbName: '' });
+  const [formData, setFormData] = useState({ name: '', nip: '', bidang: '', igUsername: '', fbName: '', tiktokName: '' });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -169,7 +170,7 @@ export default function EmployeeManager() {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', nip: '', bidang: '', igUsername: '', fbName: '' });
+    setFormData({ name: '', nip: '', bidang: '', igUsername: '', fbName: '', tiktokName: '' });
     setIsAdding(false);
     setEditingId(null);
   };
@@ -200,7 +201,8 @@ export default function EmployeeManager() {
       nip: emp.nip, 
       bidang: emp.bidang || '',
       igUsername: emp.igUsername || '', 
-      fbName: emp.fbName || '' 
+      fbName: emp.fbName || '',
+      tiktokName: emp.tiktokName || ''
     });
     setEditingId(emp.id);
     setIsAdding(true);
@@ -224,7 +226,8 @@ export default function EmployeeManager() {
         'NIP': '198XXXXXXXXXXXXX', 
         'Bidang / Unit Kerja': 'Bidang Aspirasi', 
         'Username Instagram': '@username', 
-        'Nama Profil Facebook': 'Nama Facebook' 
+        'Nama Profil Facebook': 'Nama Facebook',
+        'Nama Profil TikTok': 'Nama Akun TikTok'
       }
     ];
 
@@ -235,6 +238,30 @@ export default function EmployeeManager() {
     // Generate buffer and download
     XLSX.writeFile(workbook, "template_pegawai.xlsx");
     toast.success("Template Excel berhasil didownload");
+  };
+
+  const exportData = () => {
+    if (employees.length === 0) {
+      toast.error("Tidak ada data pegawai untuk diexport");
+      return;
+    }
+
+    const dataToExport = employees.slice().sort((a, b) => a.name.localeCompare(b.name)).map(emp => ({
+      'Nama Lengkap': emp.name,
+      'NIP': emp.nip,
+      'Bidang / Unit Kerja': emp.bidang || '',
+      'Username Instagram': emp.igUsername || '',
+      'Nama Profil Facebook': emp.fbName || '',
+      'Nama Profil TikTok': emp.tiktokName || ''
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Data Pegawai");
+    
+    // Generate buffer and download
+    XLSX.writeFile(workbook, "data_pegawai.xlsx");
+    toast.success("Data pegawai berhasil diexport");
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -288,6 +315,8 @@ export default function EmployeeManager() {
     }
 
     let successCount = 0;
+    let updatedCount = 0;
+    let newCount = 0;
     setIsUploading(true);
     
     try {
@@ -299,6 +328,9 @@ export default function EmployeeManager() {
         chunks.push(data.slice(i, i + 500));
       }
 
+      // Track newly added NIPs in this session to prevent duplicates inside the uploaded file itself
+      const newlyAddedNips = new Map<string, any>();
+
       for (const chunk of chunks) {
         const batch = writeBatch(db);
         const employeesRef = collection(db, 'employees');
@@ -306,22 +338,58 @@ export default function EmployeeManager() {
 
         for (const row of chunk) {
           // Map potential column names (Indonesian/English)
-          const name = row.name || row['Nama Lengkap'] || row['Nama'];
-          const nip = row.nip || row['NIP'] || row['Nomor Induk Pegawai'];
-          const bidang = row.bidang || row['Bidang / Unit Kerja'] || row['Bidang'] || row['Unit Kerja'];
-          const igUsername = row.igUsername || row['Username Instagram'] || row['Instagram'];
-          const fbName = row.fbName || row['Nama Profil Facebook'] || row['Facebook'];
+          const name = String(row.name || row['Nama Lengkap'] || row['Nama'] || '').trim();
+          const nip = String(row.nip || row['NIP'] || row['Nomor Induk Pegawai'] || '').trim();
+          const bidang = String(row.bidang || row['Bidang / Unit Kerja'] || row['Bidang'] || row['Unit Kerja'] || '').trim();
+          const igUsername = String(row.igUsername || row['Username Instagram'] || row['Instagram'] || '').trim();
+          const fbName = String(row.fbName || row['Nama Profil Facebook'] || row['Facebook'] || '').trim();
+          const tiktokName = String(row.tiktokName || row['Nama Profil TikTok'] || row['TikTok'] || '').trim();
 
           if (name && nip) {
-            const newDocRef = doc(employeesRef);
-            batch.set(newDocRef, {
-              name: String(name),
-              nip: String(nip),
-              bidang: bidang ? String(bidang) : '',
-              igUsername: igUsername ? String(igUsername) : '',
-              fbName: fbName ? String(fbName) : '',
-              createdAt: serverTimestamp()
-            });
+            // Check if it exists in the current database
+            const existingEmployee = employees.find(
+              emp => emp.nip === nip || emp.name.toLowerCase() === name.toLowerCase()
+            );
+
+            if (existingEmployee) {
+              const docRef = doc(db, 'employees', existingEmployee.id);
+              batch.set(docRef, {
+                name: name,
+                nip: nip,
+                bidang: bidang,
+                igUsername: igUsername,
+                fbName: fbName,
+                tiktokName: tiktokName,
+                updatedAt: serverTimestamp()
+              }, { merge: true });
+              updatedCount++;
+            } else if (newlyAddedNips.has(nip)) {
+              // It's a duplicate in the same file without being in the DB yet, update the new doc reference
+              const newDocRef = newlyAddedNips.get(nip);
+              batch.set(newDocRef, {
+                name: name,
+                nip: nip,
+                bidang: bidang,
+                igUsername: igUsername,
+                fbName: fbName,
+                tiktokName: tiktokName,
+                updatedAt: serverTimestamp()
+              }, { merge: true });
+            } else {
+              // Completely new employee
+              const newDocRef = doc(employeesRef);
+              batch.set(newDocRef, {
+                name: name,
+                nip: nip,
+                bidang: bidang,
+                igUsername: igUsername,
+                fbName: fbName,
+                tiktokName: tiktokName,
+                createdAt: serverTimestamp()
+              });
+              newlyAddedNips.set(nip, newDocRef);
+              newCount++;
+            }
             chunkCount++;
             successCount++;
           }
@@ -334,7 +402,7 @@ export default function EmployeeManager() {
       }
 
       if (successCount > 0) {
-        toast.success(`${successCount} pegawai berhasil diupload`);
+        toast.success(`Berhasil memproses data: ${newCount} ditambahkan, ${updatedCount} diperbarui`);
       } else {
         toast.error("Tidak ada data valid yang ditemukan di file");
       }
@@ -353,10 +421,14 @@ export default function EmployeeManager() {
           <h2 className="text-xl font-bold tracking-tight text-slate-900">Database Pegawai</h2>
           <p className="text-slate-500 text-xs">Kelola data pegawai untuk monitoring engagement kolektif</p>
         </div>
-        <div className="flex flex-wrap gap-2 w-full lg:w-auto lg:ml-auto">
+        <div className="flex flex-wrap gap-2 w-full xl:w-auto xl:ml-auto">
           <Button variant="outline" size="sm" onClick={downloadTemplate} className="flex-1 md:flex-none gap-2 rounded-xl border-slate-200 hover:bg-slate-50 text-slate-600 h-11 px-4 text-xs font-bold">
             <FileSpreadsheet size={14} className="text-emerald-600" />
-            Template Excel
+            Template
+          </Button>
+          <Button variant="outline" size="sm" onClick={exportData} className="flex-1 md:flex-none gap-2 rounded-xl border-slate-200 hover:bg-slate-50 text-slate-600 h-11 px-4 text-xs font-bold">
+            <Download size={14} className="text-blue-600" />
+            Export Data
           </Button>
           <div className="relative flex-1 md:flex-none">
             <Input 
@@ -376,7 +448,7 @@ export default function EmployeeManager() {
               )}
             >
               <Upload size={14} className="text-indigo-600" />
-              {isUploading ? 'Uploading...' : 'Impor Excel/CSV'}
+              {isUploading ? 'Uploading...' : 'Impor Data'}
             </label>
           </div>
           {!isAdding && (
@@ -391,7 +463,7 @@ export default function EmployeeManager() {
               className="w-full md:w-auto gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-md h-11 px-6 text-xs font-bold border-none transition-all active:scale-95"
             >
               <UserPlus size={14} />
-              Tambah Pegawai
+              Tambah
             </Button>
           )}
         </div>
@@ -500,6 +572,20 @@ export default function EmployeeManager() {
                         />
                       </div>
                     </div>
+                    <div className="space-y-1.5 md:col-span-2">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider ml-1">TikTok</label>
+                      <div className="relative group">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-black transition-colors">
+                          <TiktokIcon size={14} />
+                        </div>
+                        <Input 
+                          placeholder="Nama Profil TikTok (Bukan @username)" 
+                          value={formData.tiktokName}
+                          onChange={(e) => setFormData({...formData, tiktokName: e.target.value})}
+                          className="rounded-xl bg-white border-slate-200 focus:ring-slate-900 h-10 pl-10 text-sm"
+                        />
+                      </div>
+                    </div>
                   </div>
                   <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-slate-50">
                     <Button 
@@ -584,14 +670,20 @@ export default function EmployeeManager() {
                             <code className="text-[10px] bg-slate-50 px-2 py-0.5 rounded border border-slate-100 text-slate-500 font-mono">{emp.nip}</code>
                           </TableCell>
                           <TableCell>
-                            <div className="flex gap-3">
-                              <div className="flex items-center gap-1.5 text-[10px] font-medium text-slate-500">
-                                <Instagram size={12} className={emp.igUsername ? "text-pink-500" : "text-slate-300"} />
-                                {emp.igUsername || '-'}
+                            <div className="flex flex-col gap-1.5">
+                              <div className="flex gap-3">
+                                <div className="flex items-center gap-1.5 text-[10px] font-medium text-slate-500 w-24">
+                                  <Instagram size={12} className={emp.igUsername ? "text-pink-500 shrink-0" : "text-slate-300 shrink-0"} />
+                                  <span className="truncate">{emp.igUsername || '-'}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-[10px] font-medium text-slate-500 w-24">
+                                  <Facebook size={12} className={emp.fbName ? "text-blue-500 shrink-0" : "text-slate-300 shrink-0"} />
+                                  <span className="truncate">{emp.fbName || '-'}</span>
+                                </div>
                               </div>
                               <div className="flex items-center gap-1.5 text-[10px] font-medium text-slate-500">
-                                <Facebook size={12} className={emp.fbName ? "text-blue-500" : "text-slate-300"} />
-                                {emp.fbName || '-'}
+                                <TiktokIcon size={12} className={emp.tiktokName ? "text-slate-800 shrink-0" : "text-slate-300 shrink-0"} />
+                                <span className="truncate">{emp.tiktokName || '-'}</span>
                               </div>
                             </div>
                           </TableCell>
@@ -679,11 +771,13 @@ export default function EmployeeManager() {
                       </div>
                     </div>
                     
-                    <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-slate-50 mt-2">
-                      <span className={cn("text-[9px] font-bold px-2.5 py-1 rounded-lg uppercase tracking-wider", getBidangColor(emp.bidang))}>
-                        {emp.bidang || 'N/A'}
-                      </span>
-                      <div className="flex gap-4">
+                    <div className="flex flex-col gap-2 pt-2 border-t border-slate-50 mt-2">
+                      <div className="flex">
+                        <span className={cn("text-[9px] font-bold px-2.5 py-1 rounded-lg uppercase tracking-wider", getBidangColor(emp.bidang))}>
+                          {emp.bidang || 'N/A'}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-4 pt-1">
                         <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500">
                           <Instagram size={13} className={emp.igUsername ? "text-pink-500" : "text-slate-300"} />
                           <span className="truncate max-w-[80px]">{emp.igUsername || '-'}</span>
@@ -691,6 +785,10 @@ export default function EmployeeManager() {
                         <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500">
                           <Facebook size={13} className={emp.fbName ? "text-blue-500" : "text-slate-300"} />
                           <span className="truncate max-w-[80px]">{emp.fbName || '-'}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500">
+                          <TiktokIcon size={13} className={emp.tiktokName ? "text-slate-800" : "text-slate-300"} />
+                          <span className="truncate max-w-[80px]">{emp.tiktokName || '-'}</span>
                         </div>
                       </div>
                     </div>

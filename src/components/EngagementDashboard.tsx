@@ -28,6 +28,7 @@ import {
   RefreshCw,
   ExternalLink
 } from 'lucide-react';
+import { TiktokIcon } from './icons/TiktokIcon';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
@@ -96,8 +97,10 @@ export default function EngagementDashboard() {
   const [selectedDate, setSelectedDate] = useState(getLocalISODate(new Date()));
   const [igRawInput, setIgRawInput] = useState('');
   const [fbRawInput, setFbRawInput] = useState('');
+  const [tiktokRawInput, setTiktokRawInput] = useState('');
   const [igLinks, setIgLinks] = useState<string[]>([]);
   const [fbLinks, setFbLinks] = useState<string[]>([]);
+  const [tiktokLinks, setTiktokLinks] = useState<string[]>([]);
   const [isInputModalOpen, setIsInputModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -145,6 +148,7 @@ export default function EngagementDashboard() {
 
   const igInputRef = useRef<HTMLTextAreaElement>(null);
   const fbInputRef = useRef<HTMLTextAreaElement>(null);
+  const tiktokInputRef = useRef<HTMLTextAreaElement>(null);
   const printRef = useRef<HTMLDivElement>(null);
   const printDailyRef = useRef<HTMLDivElement>(null);
 
@@ -225,8 +229,10 @@ export default function EngagementDashboard() {
 
   const [initialIgRawInput, setInitialIgRawInput] = useState('');
   const [initialFbRawInput, setInitialFbRawInput] = useState('');
+  const [initialTiktokRawInput, setInitialTiktokRawInput] = useState('');
   const [initialIgLinks, setInitialIgLinks] = useState<string[]>([]);
   const [initialFbLinks, setInitialFbLinks] = useState<string[]>([]);
+  const [initialTiktokLinks, setInitialTiktokLinks] = useState<string[]>([]);
 
   // Load raw text and links for selected date if exists
   useEffect(() => {
@@ -234,23 +240,31 @@ export default function EngagementDashboard() {
     if (existing) {
       setIgRawInput(existing.igRawText || '');
       setFbRawInput(existing.fbRawText || '');
+      setTiktokRawInput(existing.tiktokRawText || '');
       setIgLinks(existing.igLinks || []);
       setFbLinks(existing.fbLinks || []);
+      setTiktokLinks(existing.tiktokLinks || []);
       
       setInitialIgRawInput(existing.igRawText || '');
       setInitialFbRawInput(existing.fbRawText || '');
+      setInitialTiktokRawInput(existing.tiktokRawText || '');
       setInitialIgLinks(existing.igLinks || []);
       setInitialFbLinks(existing.fbLinks || []);
+      setInitialTiktokLinks(existing.tiktokLinks || []);
     } else {
       setIgRawInput('');
       setFbRawInput('');
+      setTiktokRawInput('');
       setIgLinks([]);
       setFbLinks([]);
+      setTiktokLinks([]);
       
       setInitialIgRawInput('');
       setInitialFbRawInput('');
+      setInitialTiktokRawInput('');
       setInitialIgLinks([]);
       setInitialFbLinks([]);
+      setInitialTiktokLinks([]);
     }
   }, [selectedDate, dailyEngagements]);
 
@@ -469,11 +483,13 @@ export default function EngagementDashboard() {
       const engagement = dailyEngagements.find(d => d.id === date);
       const igCount = engagement?.igEngagedEmployeeIds?.length || 0;
       const fbCount = engagement?.fbEngagedEmployeeIds?.length || 0;
+      const tiktokCount = engagement?.tiktokEngagedEmployeeIds?.length || 0;
       return {
         name: new Date(date).toLocaleDateString('id-ID', { weekday: 'short' }),
         ig: igCount,
         fb: fbCount,
-        total: igCount + fbCount
+        tiktok: tiktokCount,
+        total: igCount + fbCount + tiktokCount
       };
     });
   }, [dailyEngagements]);
@@ -482,16 +498,23 @@ export default function EngagementDashboard() {
     const totalEmployees = employees.length;
     const today = new Date().toISOString().split('T')[0];
     const todayEng = dailyEngagements.find(d => d.id === today);
-    const todayCount = (todayEng?.igEngagedEmployeeIds?.length || 0) + (todayEng?.fbEngagedEmployeeIds?.length || 0);
+    const todayCount = (todayEng?.igEngagedEmployeeIds?.length || 0) + (todayEng?.fbEngagedEmployeeIds?.length || 0) + (todayEng?.tiktokEngagedEmployeeIds?.length || 0);
     const totalEngagements = dailyEngagements.reduce((acc, curr) => 
-      acc + (curr.igEngagedEmployeeIds?.length || 0) + (curr.fbEngagedEmployeeIds?.length || 0), 0
+      acc + (curr.igEngagedEmployeeIds?.length || 0) + (curr.fbEngagedEmployeeIds?.length || 0) + (curr.tiktokEngagedEmployeeIds?.length || 0), 0
     );
     
+    // Calculate unique engaged employees for the day
+    const uniqueEngagedEmployeesToday = new Set([
+      ...(todayEng?.igEngagedEmployeeIds || []),
+      ...(todayEng?.fbEngagedEmployeeIds || []),
+      ...(todayEng?.tiktokEngagedEmployeeIds || [])
+    ]).size;
+
     return {
       totalEmployees,
       todayCount,
       totalEngagements,
-      engagementRate: totalEmployees > 0 ? Math.round(((todayEng?.igEngagedEmployeeIds?.length || 0) / totalEmployees) * 100) : 0
+      engagementRate: totalEmployees > 0 ? Math.round((uniqueEngagedEmployeesToday / totalEmployees) * 100) : 0
     };
   }, [employees, dailyEngagements]);
 
@@ -511,10 +534,12 @@ export default function EngagementDashboard() {
           const nameMatch = emp.name.toLowerCase().trim();
           const igMatch = emp.igUsername?.replace('@', '').toLowerCase().trim();
           const fbMatch = emp.fbName?.toLowerCase().trim();
+          const tiktokMatch = emp.tiktokName?.toLowerCase().trim();
           
           if ((nameMatch && lowerInput.includes(nameMatch)) || 
               (igMatch && lowerInput.includes(igMatch)) || 
-              (fbMatch && lowerInput.includes(fbMatch))) {
+              (fbMatch && lowerInput.includes(fbMatch)) ||
+              (tiktokMatch && lowerInput.includes(tiktokMatch))) {
             matchedIds.push(emp.id);
           }
         });
@@ -523,15 +548,18 @@ export default function EngagementDashboard() {
 
       const currentIgRawInput = igInputRef.current ? igInputRef.current.value : igRawInput;
       const currentFbRawInput = fbInputRef.current ? fbInputRef.current.value : fbRawInput;
+      const currentTiktokRawInput = tiktokInputRef.current ? tiktokInputRef.current.value : tiktokRawInput;
 
       const igEngagedIds = processInput(currentIgRawInput);
       const fbEngagedIds = processInput(currentFbRawInput);
+      const tiktokEngagedIds = processInput(currentTiktokRawInput);
 
       const docRef = doc(db, 'dailyEngagement', selectedDate);
       
-      // Check if user actually modified IG or FB data
+      // Check if user actually modified IG, FB, or TikTok data
       const igChanged = currentIgRawInput !== initialIgRawInput || JSON.stringify(igLinks) !== JSON.stringify(initialIgLinks);
       const fbChanged = currentFbRawInput !== initialFbRawInput || JSON.stringify(fbLinks) !== JSON.stringify(initialFbLinks);
+      const tiktokChanged = currentTiktokRawInput !== initialTiktokRawInput || JSON.stringify(tiktokLinks) !== JSON.stringify(initialTiktokLinks);
       
       const updateData: any = {
         date: selectedDate,
@@ -548,6 +576,12 @@ export default function EngagementDashboard() {
         updateData.fbRawText = currentFbRawInput;
         updateData.fbEngagedEmployeeIds = fbEngagedIds;
         updateData.fbLinks = fbLinks;
+      }
+      
+      if (tiktokChanged) {
+        updateData.tiktokRawText = currentTiktokRawInput;
+        updateData.tiktokEngagedEmployeeIds = tiktokEngagedIds;
+        updateData.tiktokLinks = tiktokLinks;
       }
 
       await setDoc(docRef, updateData, { merge: true });
@@ -653,7 +687,8 @@ export default function EngagementDashboard() {
         const engagement = dailyEngagements.find(d => d.id === date);
         const hasIg = engagement?.igEngagedEmployeeIds?.includes(emp.id);
         const hasFb = engagement?.fbEngagedEmployeeIds?.includes(emp.id);
-        if (hasIg || hasFb) engagedDays++;
+        const hasTiktok = engagement?.tiktokEngagedEmployeeIds?.includes(emp.id);
+        if (hasIg || hasFb || hasTiktok) engagedDays++;
       });
       employeeTotals[emp.id] = engagedDays;
     });
@@ -897,7 +932,7 @@ export default function EngagementDashboard() {
                       <Card className="h-full border-slate-100/50 shadow-sm rounded-2xl overflow-hidden bg-white/80 backdrop-blur-sm">
                         <CardHeader className="p-6 border-b border-slate-50">
                           <CardTitle className="text-base font-bold">Tren Engagement (7 Hari Terakhir)</CardTitle>
-                          <CardDescription className="text-xs">Perbandingan interaksi harian Instagram & Facebook</CardDescription>
+                          <CardDescription className="text-xs">Perbandingan interaksi harian Instagram, Facebook & TikTok</CardDescription>
                         </CardHeader>
                         <CardContent className="p-6 h-[300px] min-h-[300px]">
                           <ResponsiveContainer width="100%" height="100%" minWidth={0}>
@@ -920,7 +955,8 @@ export default function EngagementDashboard() {
                                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                               />
                               <Bar dataKey="ig" name="Instagram" stackId="a" fill="#ec4899" radius={[0, 0, 0, 0]} barSize={32} />
-                              <Bar dataKey="fb" name="Facebook" stackId="a" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={32} />
+                              <Bar dataKey="fb" name="Facebook" stackId="a" fill="#3b82f6" radius={[0, 0, 0, 0]} barSize={32} />
+                              <Bar dataKey="tiktok" name="TikTok" stackId="a" fill="#0f172a" radius={[4, 4, 0, 0]} barSize={32} />
                             </BarChart>
                           </ResponsiveContainer>
                         </CardContent>
@@ -1134,6 +1170,7 @@ export default function EngagementDashboard() {
                                           const urls = val.split(/[\s,\n]+/).filter(url => url.trim() !== '');
                                           const newIg = [...igLinks];
                                           const newFb = [...fbLinks];
+                                          const newTiktok = [...tiktokLinks];
                                           urls.forEach(rawUrl => {
                                             let url = rawUrl;
                                             if (url.includes('instagram.com')) {
@@ -1150,10 +1187,14 @@ export default function EngagementDashboard() {
                                               }
                                               const isDuplicate = dailyEngagements.some(d => d.fbLinks?.includes(url));
                                               if (!newFb.includes(url) && !isDuplicate) newFb.push(url);
+                                            } else if (url.includes('tiktok.com')) {
+                                              const isDuplicate = dailyEngagements.some(d => d.tiktokLinks?.includes(url));
+                                              if (!newTiktok.includes(url) && !isDuplicate) newTiktok.push(url);
                                             }
                                           });
                                           setIgLinks(newIg);
                                           setFbLinks(newFb);
+                                          setTiktokLinks(newTiktok);
                                           e.currentTarget.value = '';
                                         }
                                       }
@@ -1215,10 +1256,37 @@ export default function EngagementDashboard() {
                                     <span className="text-xs text-slate-400 italic">Belum ada postingan FB</span>
                                   )}
                                 </div>
+
+                                {/* TikTok Links */}
+                                <div className="flex flex-wrap gap-2 items-center">
+                                  <span className="font-bold text-slate-800 text-sm italic pr-1 leading-none">t</span>
+                                  {tiktokLinks.length > 0 ? (
+                                    tiktokLinks.map((link, idx) => (
+                                      <div key={idx} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-100 text-slate-800 text-xs font-medium border border-slate-200">
+                                        <a href={link} target="_blank" rel="noopener noreferrer" className="hover:underline flex items-center gap-1">
+                                          Post TikTok {idx + 1}
+                                          <ExternalLink size={10} />
+                                        </a>
+                                        <button 
+                                          onClick={() => {
+                                            const newLinks = [...tiktokLinks];
+                                            newLinks.splice(idx, 1);
+                                            setTiktokLinks(newLinks);
+                                          }}
+                                          className="ml-1 p-0.5 hover:bg-slate-300 rounded-full transition-colors"
+                                        >
+                                          <X size={10} />
+                                        </button>
+                                      </div>
+                                    ))
+                                  ) : (
+                                    <span className="text-xs text-slate-400 italic">Belum ada postingan TikTok</span>
+                                  )}
+                                </div>
                               </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                               <div className="space-y-2">
                                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                                   <Instagram size={12} className="text-pink-500" />
@@ -1240,6 +1308,18 @@ export default function EngagementDashboard() {
                                   ref={fbInputRef}
                                   defaultValue={fbRawInput}
                                   placeholder="Paste list nama atau username di sini..."
+                                  className="w-full h-32 md:h-40 p-3 md:p-4 rounded-xl border border-slate-200 bg-slate-50/30 focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all text-sm resize-none"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                  <TiktokIcon size={16} className="text-slate-800" />
+                                  List Nama Akun TikTok
+                                </label>
+                                <textarea
+                                  ref={tiktokInputRef}
+                                  defaultValue={tiktokRawInput}
+                                  placeholder="Paste list nama akun TikTok di sini..."
                                   className="w-full h-32 md:h-40 p-3 md:p-4 rounded-xl border border-slate-200 bg-slate-50/30 focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all text-sm resize-none"
                                 />
                               </div>
@@ -1365,6 +1445,9 @@ export default function EngagementDashboard() {
                               <TableHead className="text-center px-1.5 py-1 text-[10px] font-bold text-slate-900 uppercase tracking-wider h-auto w-[1%] whitespace-nowrap">
                                 Facebook
                               </TableHead>
+                              <TableHead className="border-l border-slate-100 text-center px-1.5 py-1 text-[10px] font-bold text-slate-900 uppercase tracking-wider h-auto w-[1%] whitespace-nowrap">
+                                TikTok
+                              </TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -1376,7 +1459,10 @@ export default function EngagementDashboard() {
                               
                               const hasIgAccount = !!emp.igUsername;
                               const hasFbAccount = !!emp.fbName;
+                              const hasTiktokAccount = !!emp.tiktokName;
                               const isFuture = dateStr > getLocalISODate(new Date());
+                              
+                              const hasTiktok = engagement?.tiktokEngagedEmployeeIds?.includes(emp.id);
                               
                               return (
                                 <TableRow key={emp.id} className="hover:bg-slate-50/30 transition-colors border-b border-slate-50">
@@ -1386,6 +1472,7 @@ export default function EngagementDashboard() {
                                       <div className="flex items-center gap-0.5">
                                         {hasIgAccount && <Instagram size={10} className="text-pink-500/50" />}
                                         {hasFbAccount && <Facebook size={10} className="text-blue-500/50" />}
+                                        {hasTiktokAccount && <TiktokIcon size={10} className="text-slate-800/50" />}
                                       </div>
                                     </div>
                                   </TableCell>
@@ -1399,7 +1486,7 @@ export default function EngagementDashboard() {
                                   </TableCell>
                                   <TableCell className="border-r border-slate-50 text-center p-0 w-[1%] whitespace-nowrap">
                                     <div className="flex items-center justify-center py-0.5">
-                                      {hasIgAccount && !isFuture ? (
+                                      {!isFuture ? (
                                         hasIg ? (
                                           <Heart size={14} className="text-pink-500" fill="currentColor" />
                                         ) : (
@@ -1408,11 +1495,22 @@ export default function EngagementDashboard() {
                                       ) : null}
                                     </div>
                                   </TableCell>
-                                  <TableCell className="text-center p-0 w-[1%] whitespace-nowrap">
+                                  <TableCell className="border-r border-slate-50 text-center p-0 w-[1%] whitespace-nowrap">
                                     <div className="flex items-center justify-center py-0.5">
-                                      {hasFbAccount && !isFuture ? (
+                                      {!isFuture ? (
                                         hasFb ? (
                                           <ThumbsUp size={14} className="text-blue-500" fill="currentColor" />
+                                        ) : (
+                                          <X size={14} className="text-red-500" strokeWidth={3} />
+                                        )
+                                      ) : null}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-center p-0 w-[1%] whitespace-nowrap">
+                                    <div className="flex items-center justify-center py-0.5">
+                                      {!isFuture ? (
+                                        hasTiktok ? (
+                                          <TiktokIcon size={14} className="text-slate-800" fill="currentColor" />
                                         ) : (
                                           <X size={14} className="text-red-500" strokeWidth={3} />
                                         )
@@ -1549,6 +1647,11 @@ export default function EngagementDashboard() {
                                           <Facebook size={10} className="text-blue-500" /> {emp.fbName}
                                         </div>
                                       )}
+                                      {emp.tiktokName && (
+                                        <div className="flex items-center gap-1 text-[9px] text-slate-500 font-medium whitespace-nowrap">
+                                          <TiktokIcon size={10} className="text-slate-800" /> {emp.tiktokName}
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
                                 </TableCell>
@@ -1556,25 +1659,34 @@ export default function EngagementDashboard() {
                                   const engagement = dailyEngagements.find(d => d.id === date);
                                   const hasIg = engagement?.igEngagedEmployeeIds?.includes(emp.id);
                                   const hasFb = engagement?.fbEngagedEmployeeIds?.includes(emp.id);
+                                  const hasTiktok = engagement?.tiktokEngagedEmployeeIds?.includes(emp.id);
                                   
                                   const todayStr = getLocalISODate(new Date());
                                   const isFuture = date > todayStr;
                                   const hasIgAccount = !!emp.igUsername;
                                   const hasFbAccount = !!emp.fbName;
+                                  const hasTiktokAccount = !!emp.tiktokName;
 
                                   return (
                                     <TableCell key={dIdx} className="border-r border-slate-50 text-center px-1.5 py-0 w-[1%] whitespace-nowrap">
                                       <div className="flex items-center justify-center gap-1.5 py-1">
                                         {/* Instagram Indicator */}
-                                        {hasIgAccount && !isFuture ? (
+                                        {!isFuture ? (
                                           hasIg ? <Heart size={12} className="text-pink-500" fill="currentColor" /> : <X size={12} className="text-red-500" strokeWidth={3} />
                                         ) : (
                                           <div className="w-3 h-3" />
                                         )}
 
                                         {/* Facebook Indicator */}
-                                        {hasFbAccount && !isFuture ? (
+                                        {!isFuture ? (
                                           hasFb ? <ThumbsUp size={12} className="text-blue-500" fill="currentColor" /> : <X size={12} className="text-red-500" strokeWidth={3} />
+                                        ) : (
+                                          <div className="w-3 h-3" />
+                                        )}
+
+                                        {/* TikTok Indicator */}
+                                        {!isFuture ? (
+                                          hasTiktok ? <TiktokIcon size={12} className="text-slate-800" fill="currentColor" /> : <X size={12} className="text-red-500" strokeWidth={3} />
                                         ) : (
                                           <div className="w-3 h-3" />
                                         )}

@@ -5,6 +5,7 @@ export interface Employee {
   bidang?: string;
   igUsername?: string;
   fbName?: string;
+  tiktokName?: string;
   createdAt?: any;
   updatedAt?: any;
 }
@@ -14,9 +15,12 @@ export interface DailyEngagement {
   date: string;
   igRawText: string;
   fbRawText: string;
+  tiktokRawText: string;
   igEngagedEmployeeIds: string[];
   fbEngagedEmployeeIds: string[];
+  tiktokEngagedEmployeeIds: string[];
   igLinks?: string[];
   fbLinks?: string[];
+  tiktokLinks?: string[];
   updatedAt: any;
 }
