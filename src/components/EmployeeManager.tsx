@@ -7,7 +7,7 @@ import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
-import { Trash2, Plus, UserPlus, Save, X, Download, Upload, FileSpreadsheet, Users, Instagram, Facebook, User, CreditCard, UserCircle } from 'lucide-react';
+import { Trash2, Plus, UserPlus, Save, X, Download, Upload, FileSpreadsheet, Users, Instagram, Facebook, User, CreditCard, UserCircle, Search, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { TiktokIcon } from './icons/TiktokIcon';
 import { toast } from 'sonner';
 import { useAuth } from './FirebaseProvider';
@@ -101,6 +101,42 @@ export default function EmployeeManager() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const { user, loading } = useAuth();
+
+  const [searchQuery, setSearchQuery] = useState('');
+  type SortField = 'name' | 'bidang' | 'nip';
+  const [sortConfig, setSortConfig] = useState<{ field: SortField, direction: 'asc' | 'desc' } | null>({ field: 'name', direction: 'asc' });
+
+  const filteredAndSortedEmployees = React.useMemo(() => {
+    let result = [...employees];
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(emp => emp.name.toLowerCase().includes(q));
+    }
+    if (sortConfig) {
+      result.sort((a, b) => {
+        const valA = (a[sortConfig.field] || '').toLowerCase();
+        const valB = (b[sortConfig.field] || '').toLowerCase();
+        if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    return result;
+  }, [employees, searchQuery, sortConfig]);
+
+  const handleSort = (field: SortField) => {
+    setSortConfig(current => {
+      if (current?.field === field) {
+        return { field, direction: current.direction === 'asc' ? 'desc' : 'asc' };
+      }
+      return { field, direction: 'asc' };
+    });
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortConfig?.field !== field) return <ArrowUpDown size={12} className="ml-1 opacity-20" />;
+    return sortConfig.direction === 'asc' ? <ArrowUp size={12} className="ml-1 text-slate-900" /> : <ArrowDown size={12} className="ml-1 text-slate-900" />;
+  };
 
   const getBidangColor = (bidang?: string) => {
     if (!bidang) return "bg-slate-100 text-slate-400";
@@ -421,51 +457,62 @@ export default function EmployeeManager() {
           <h2 className="text-xl font-bold tracking-tight text-slate-900">Database Pegawai</h2>
           <p className="text-slate-500 text-xs">Kelola data pegawai untuk monitoring engagement kolektif</p>
         </div>
-        <div className="flex flex-wrap gap-2 w-full xl:w-auto xl:ml-auto">
-          <Button variant="outline" size="sm" onClick={downloadTemplate} className="flex-1 md:flex-none gap-2 rounded-xl border-slate-200 hover:bg-slate-50 text-slate-600 h-11 px-4 text-xs font-bold">
-            <FileSpreadsheet size={14} className="text-emerald-600" />
-            Template
-          </Button>
-          <Button variant="outline" size="sm" onClick={exportData} className="flex-1 md:flex-none gap-2 rounded-xl border-slate-200 hover:bg-slate-50 text-slate-600 h-11 px-4 text-xs font-bold">
-            <Download size={14} className="text-blue-600" />
-            Export Data
-          </Button>
-          <div className="relative flex-1 md:flex-none">
+        <div className="flex flex-col xl:flex-row gap-4 w-full xl:w-auto xl:ml-auto">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <Input 
-              type="file" 
-              accept=".csv, .xlsx, .xls" 
-              className="hidden" 
-              id="excel-upload" 
-              onChange={handleFileUpload}
-              disabled={isUploading}
+              placeholder="Cari nama pegawai..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-11 text-xs rounded-xl bg-slate-50 border-transparent focus:bg-white focus:border-indigo-200 transition-all font-medium"
             />
-            <label 
-              htmlFor="excel-upload" 
-              className={cn(
-                buttonVariants({ variant: "outline", size: "sm" }),
-                "w-full rounded-xl border-slate-200 hover:bg-slate-50 text-slate-600 cursor-pointer gap-2 flex items-center justify-center h-11 px-4 text-xs font-bold",
-                isUploading && "opacity-50 pointer-events-none"
-              )}
-            >
-              <Upload size={14} className="text-indigo-600" />
-              {isUploading ? 'Uploading...' : 'Impor Data'}
-            </label>
           </div>
-          {!isAdding && (
-            <Button 
-              size="sm" 
-              onClick={() => {
-                setIsAdding(true);
-                setTimeout(() => {
-                  document.getElementById('employee-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }, 100);
-              }} 
-              className="w-full md:w-auto gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-md h-11 px-6 text-xs font-bold border-none transition-all active:scale-95"
-            >
-              <UserPlus size={14} />
-              Tambah
+          <div className="flex flex-wrap gap-2 w-full xl:w-auto">
+            <Button variant="outline" size="sm" onClick={downloadTemplate} className="flex-1 md:flex-none gap-2 rounded-xl border-slate-200 hover:bg-slate-50 text-slate-600 h-11 px-4 text-xs font-bold">
+              <FileSpreadsheet size={14} className="text-emerald-600" />
+              Template
             </Button>
-          )}
+            <Button variant="outline" size="sm" onClick={exportData} className="flex-1 md:flex-none gap-2 rounded-xl border-slate-200 hover:bg-slate-50 text-slate-600 h-11 px-4 text-xs font-bold">
+              <Download size={14} className="text-blue-600" />
+              Export
+            </Button>
+            <div className="relative flex-1 md:flex-none">
+              <Input 
+                type="file" 
+                accept=".csv, .xlsx, .xls" 
+                className="hidden" 
+                id="excel-upload" 
+                onChange={handleFileUpload}
+                disabled={isUploading}
+              />
+              <label 
+                htmlFor="excel-upload" 
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "sm" }),
+                  "w-full rounded-xl border-slate-200 hover:bg-slate-50 text-slate-600 cursor-pointer gap-2 flex items-center justify-center h-11 px-4 text-xs font-bold",
+                  isUploading && "opacity-50 pointer-events-none"
+                )}
+              >
+                <Upload size={14} className="text-indigo-600" />
+                {isUploading ? 'Uploading...' : 'Impor'}
+              </label>
+            </div>
+            {!isAdding && (
+              <Button 
+                size="sm" 
+                onClick={() => {
+                  setIsAdding(true);
+                  setTimeout(() => {
+                    document.getElementById('employee-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 100);
+                }} 
+                className="w-full md:w-auto gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-md h-11 px-6 text-xs font-bold border-none transition-all active:scale-95"
+              >
+                <UserPlus size={14} />
+                Tambah
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -620,9 +667,30 @@ export default function EmployeeManager() {
                 <Table>
                   <TableHeader className="bg-slate-50/50 sticky top-0 z-10 shadow-sm">
                     <TableRow className="hover:bg-transparent border-slate-100">
-                      <TableHead className="pl-6 py-4 font-bold text-slate-400 uppercase tracking-widest text-[10px] bg-slate-50/90 backdrop-blur-sm">Pegawai</TableHead>
-                      <TableHead className="font-bold text-slate-400 uppercase tracking-widest text-[10px] bg-slate-50/90 backdrop-blur-sm">Bidang</TableHead>
-                      <TableHead className="font-bold text-slate-400 uppercase tracking-widest text-[10px] bg-slate-50/90 backdrop-blur-sm">Identitas</TableHead>
+                      <TableHead 
+                        className="pl-6 py-4 font-bold text-slate-400 uppercase tracking-widest text-[10px] bg-slate-50/90 backdrop-blur-sm cursor-pointer hover:text-slate-700 select-none group transition-colors"
+                        onClick={() => handleSort('name')}
+                      >
+                        <div className="flex items-center">
+                          Pegawai <SortIcon field="name" />
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="font-bold text-slate-400 uppercase tracking-widest text-[10px] bg-slate-50/90 backdrop-blur-sm cursor-pointer hover:text-slate-700 select-none group transition-colors"
+                        onClick={() => handleSort('bidang')}
+                      >
+                        <div className="flex items-center">
+                          Bidang <SortIcon field="bidang" />
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="font-bold text-slate-400 uppercase tracking-widest text-[10px] bg-slate-50/90 backdrop-blur-sm cursor-pointer hover:text-slate-700 select-none group transition-colors"
+                        onClick={() => handleSort('nip')}
+                      >
+                        <div className="flex items-center">
+                          Identitas (NIP) <SortIcon field="nip" />
+                        </div>
+                      </TableHead>
                       <TableHead className="font-bold text-slate-400 uppercase tracking-widest text-[10px] bg-slate-50/90 backdrop-blur-sm">Sosial Media</TableHead>
                       <TableHead className="text-right pr-6 font-bold text-slate-400 uppercase tracking-widest text-[10px] bg-slate-50/90 backdrop-blur-sm">Aksi</TableHead>
                     </TableRow>
@@ -633,7 +701,7 @@ export default function EmployeeManager() {
                     animate="visible"
                     className="[&_tr:last-child]:border-0"
                   >
-                    {employees.length === 0 ? (
+                    {filteredAndSortedEmployees.length === 0 ? (
                       <motion.tr variants={itemVariants} className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
                         <TableCell colSpan={5} className="h-48 text-center text-slate-400">
                           <div className="flex flex-col items-center gap-2">
@@ -643,7 +711,7 @@ export default function EmployeeManager() {
                         </TableCell>
                       </motion.tr>
                     ) : (
-                      employees.slice().sort((a, b) => a.name.localeCompare(b.name)).map((emp, index) => (
+                      filteredAndSortedEmployees.map((emp, index) => (
                         <motion.tr 
                           key={emp.id} 
                           variants={itemVariants}
@@ -724,13 +792,13 @@ export default function EmployeeManager() {
           {/* Mobile Card Layout - Shown on small screens */}
           <div className="md:hidden">
             <div className="divide-y divide-slate-100">
-              {employees.length === 0 ? (
+              {filteredAndSortedEmployees.length === 0 ? (
                 <div className="px-6 py-12 text-center text-slate-400 space-y-2">
                   <Users size={32} className="mx-auto opacity-20" />
                   <p className="text-xs font-medium">Belum ada data pegawai</p>
                 </div>
               ) : (
-                employees.slice().sort((a, b) => a.name.localeCompare(b.name)).map((emp, index) => (
+                filteredAndSortedEmployees.map((emp, index) => (
                   <motion.div 
                     key={emp.id}
                     initial={{ opacity: 0 }}
