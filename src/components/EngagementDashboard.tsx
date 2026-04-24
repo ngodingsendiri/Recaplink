@@ -724,13 +724,10 @@ export default function EngagementDashboard() {
       </AnimatePresence>
 
       {/* Sidebar */}
-      <motion.aside 
-        initial={false}
-        animate={{ x: isSidebarOpen || window.innerWidth >= 1024 ? 0 : -288 }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      <aside 
         className={cn(
-          "fixed lg:static inset-y-0 left-0 w-72 bg-white border-r border-slate-100 flex flex-col shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-50",
-          !isSidebarOpen && "lg:translate-x-0"
+          "fixed inset-y-0 left-0 w-72 bg-white border-r border-slate-100 flex flex-col shadow-[4px_0_24px_rgba(0,0,0,0.02)] z-50 transition-transform duration-300 ease-in-out lg:static lg:translate-x-0",
+          !isSidebarOpen ? "-translate-x-full" : "translate-x-0"
         )}
       >
         <div className="p-6 flex-1 overflow-y-auto">
@@ -821,7 +818,7 @@ export default function EngagementDashboard() {
             </div>
           )}
         </div>
-      </motion.aside>
+      </aside>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative pb-20 lg:pb-0">
@@ -1082,7 +1079,7 @@ export default function EngagementDashboard() {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: '100%' }}
                           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                          className="bg-white w-full max-w-2xl rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh]"
+                          className="bg-white w-full max-w-xl rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] sm:max-h-[80vh]"
                         >
                           <div className="p-5 sm:p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/20 shrink-0">
                             <div>
@@ -1276,41 +1273,41 @@ export default function EngagementDashboard() {
                               </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-4">
                               <div className="space-y-2">
                                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                                   <Instagram size={12} className="text-pink-500" />
-                                  List Nama/Username IG
+                                  List IG
                                 </label>
                                 <textarea
                                   ref={igInputRef}
                                   defaultValue={igRawInput}
                                   placeholder="Paste list nama atau username di sini..."
-                                  className="w-full h-32 md:h-40 p-3 md:p-4 rounded-xl border border-slate-200 bg-slate-50/30 focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all text-sm resize-none"
+                                  className="w-full h-24 md:h-32 p-3 text-xs rounded-xl border border-slate-200 bg-slate-50/30 focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all resize-none"
                                 />
                               </div>
                               <div className="space-y-2">
                                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                                   <Facebook size={12} className="text-blue-500" />
-                                  List Nama/Username FB
+                                  List FB
                                 </label>
                                 <textarea
                                   ref={fbInputRef}
                                   defaultValue={fbRawInput}
                                   placeholder="Paste list nama atau username di sini..."
-                                  className="w-full h-32 md:h-40 p-3 md:p-4 rounded-xl border border-slate-200 bg-slate-50/30 focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all text-sm resize-none"
+                                  className="w-full h-24 md:h-32 p-3 text-xs rounded-xl border border-slate-200 bg-slate-50/30 focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all resize-none"
                                 />
                               </div>
                               <div className="space-y-2">
                                 <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                                   <TiktokIcon size={16} className="text-slate-800" />
-                                  List Nama Akun TikTok
+                                  List TikTok
                                 </label>
                                 <textarea
                                   ref={tiktokInputRef}
                                   defaultValue={tiktokRawInput}
                                   placeholder="Paste list nama akun TikTok di sini..."
-                                  className="w-full h-32 md:h-40 p-3 md:p-4 rounded-xl border border-slate-200 bg-slate-50/30 focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all text-sm resize-none"
+                                  className="w-full h-24 md:h-32 p-3 text-xs rounded-xl border border-slate-200 bg-slate-50/30 focus:ring-2 focus:ring-slate-900/5 focus:border-slate-900 transition-all resize-none"
                                 />
                               </div>
                             </div>
