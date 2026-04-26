@@ -26,7 +26,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 bg-grid-pattern">
+    <div className="flex flex-col items-center justify-center min-h-screen-safe min-h-[100dvh] bg-slate-50 bg-grid-pattern pb-safe">
       <div className="p-8 bg-white rounded-2xl shadow-xl border border-slate-100 text-center max-w-sm w-full mx-4">
         <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-indigo-100">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">

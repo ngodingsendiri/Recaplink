@@ -6,6 +6,7 @@
 import EngagementDashboard from './components/EngagementDashboard';
 import LoginScreen from './components/LoginScreen';
 import { useAuth } from './components/FirebaseProvider';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 export default function App() {
   const { user, loading, error } = useAuth();
@@ -19,12 +20,18 @@ export default function App() {
   }
 
   if (!user) {
-    return <LoginScreen />;
+    return (
+      <ErrorBoundary>
+        <LoginScreen />
+      </ErrorBoundary>
+    );
   }
 
   return (
     <div className="min-h-screen">
-      <EngagementDashboard />
+      <ErrorBoundary>
+        <EngagementDashboard />
+      </ErrorBoundary>
     </div>
   );
 }

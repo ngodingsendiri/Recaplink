@@ -11,8 +11,6 @@ import { Trash2, Plus, UserPlus, Save, X, Download, Upload, FileSpreadsheet, Use
 import { TiktokIcon } from './icons/TiktokIcon';
 import { toast } from 'sonner';
 import { useAuth } from './FirebaseProvider';
-import Papa from 'papaparse';
-import * as XLSX from 'xlsx';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn, getBidangColor } from '@/lib/utils';
 import { auth } from '../lib/firebase';
@@ -68,6 +66,78 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
   toast.error(`Gagal: ${errInfo.error}`);
   throw new Error(JSON.stringify(errInfo));
 }
+
+const EmployeeRow = React.memo(({ emp, index, onEdit, onDelete }: { emp: Employee, index: number, onEdit: (e: Employee) => void, onDelete: (id: string) => void }) => {
+  return (
+    <motion.tr 
+      variants={itemVariants}
+      whileHover={{ backgroundColor: "rgba(241, 245, 249, 0.5)" }}
+      className="group transition-all border-b border-slate-50"
+    >
+      <TableCell className="pl-6 py-3">
+        <div className="flex items-center gap-3">
+          <motion.div 
+            className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 font-mono font-bold text-[10px]"
+            whileHover={{ scale: 1.1, rotate: 5 }}
+          >
+            {index + 1}
+          </motion.div>
+          <div className="font-bold text-slate-900 text-sm whitespace-nowrap">{emp.name}</div>
+        </div>
+      </TableCell>
+      <TableCell>
+        <span className={cn("text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase tracking-wider", getBidangColor(emp.bidang))}>
+          {emp.bidang || 'N/A'}
+        </span>
+      </TableCell>
+      <TableCell>
+        <code className="text-[10px] bg-slate-50 px-2 py-0.5 rounded border border-slate-100 text-slate-500 font-mono">{emp.nip}</code>
+      </TableCell>
+      <TableCell>
+        <div className="flex flex-col gap-1.5">
+          <div className="flex gap-3">
+            <div className="flex items-center gap-1.5 text-[10px] font-medium text-slate-500 w-24">
+              <Instagram size={12} className={emp.igUsername ? "text-pink-500 shrink-0" : "text-slate-300 shrink-0"} />
+              <span className="truncate">{emp.igUsername || '-'}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[10px] font-medium text-slate-500 w-24">
+              <Facebook size={12} className={emp.fbName ? "text-blue-500 shrink-0" : "text-slate-300 shrink-0"} />
+              <span className="truncate">{emp.fbName || '-'}</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 text-[10px] font-medium text-slate-500">
+            <TiktokIcon size={12} className={emp.tiktokName ? "text-slate-800 shrink-0" : "text-slate-300 shrink-0"} />
+            <span className="truncate">{emp.tiktokName || '-'}</span>
+          </div>
+        </div>
+      </TableCell>
+      <TableCell className="text-right pr-6">
+        <div className="flex justify-end gap-1">
+          <Button 
+            variant="secondary" 
+            size="icon" 
+            onClick={() => onEdit(emp)} 
+            className="bg-white border border-slate-200 text-slate-400 hover:text-slate-900 h-8 w-8 rounded-lg transition-all shadow-sm"
+            title="Edit"
+          >
+            <UserCircle size={14} />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => onDelete(emp.id)} 
+            className="h-8 w-8 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-all"
+            title="Hapus"
+          >
+            <Trash2 size={14} />
+          </Button>
+        </div>
+      </TableCell>
+    </motion.tr>
+  );
+});
+
+EmployeeRow.displayName = 'EmployeeRow';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -233,7 +303,7 @@ export default function EmployeeManager() {
     }, 100);
   };
 
-  const downloadTemplate = () => {
+  const downloadTemplate = async () => {
     // Create Excel Template
     const templateData = [
       { 
@@ -246,6 +316,7 @@ export default function EmployeeManager() {
       }
     ];
 
+    const XLSX = await import('xlsx');
     const worksheet = XLSX.utils.json_to_sheet(templateData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Template Pegawai");
@@ -255,7 +326,7 @@ export default function EmployeeManager() {
     toast.success("Template Excel berhasil didownload");
   };
 
-  const exportData = () => {
+  const exportData = async () => {
     if (employees.length === 0) {
       toast.error("Tidak ada data pegawai untuk diexport");
       return;
@@ -270,6 +341,7 @@ export default function EmployeeManager() {
       'Nama Profil TikTok': emp.tiktokName || ''
     }));
 
+    const XLSX = await import('xlsx');
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Data Pegawai");
@@ -287,23 +359,26 @@ export default function EmployeeManager() {
     setIsUploading(true);
 
     if (fileExtension === 'csv') {
-      Papa.parse(file, {
-        header: true,
-        skipEmptyLines: true,
-        complete: async (results) => {
-          await processUploadedData(results.data);
-          e.target.value = '';
-        },
-        error: (error) => {
-          setIsUploading(false);
-          toast.error("Gagal membaca file CSV");
-        }
+      import('papaparse').then((Papa) => {
+        Papa.default.parse(file, {
+          header: true,
+          skipEmptyLines: true,
+          complete: async (results) => {
+            await processUploadedData(results.data);
+            e.target.value = '';
+          },
+          error: (error) => {
+            setIsUploading(false);
+            toast.error("Gagal membaca file CSV");
+          }
+        });
       });
     } else if (fileExtension === 'xlsx' || fileExtension === 'xls') {
       const reader = new FileReader();
       reader.onload = async (evt) => {
         try {
           const data = evt.target?.result;
+          const XLSX = await import('xlsx');
           const wb = XLSX.read(data, { type: 'array' });
           const wsname = wb.SheetNames[0];
           const ws = wb.Sheets[wsname];
@@ -691,75 +766,13 @@ export default function EmployeeManager() {
                       </motion.tr>
                     ) : (
                       filteredAndSortedEmployees.map((emp, index) => (
-                        <motion.tr 
-                          key={emp.id} 
-                          variants={itemVariants}
-                          whileHover={{ backgroundColor: "rgba(241, 245, 249, 0.5)" }}
-                          className="group transition-all border-b border-slate-50"
-                        >
-                          <TableCell className="pl-6 py-3">
-                            <div className="flex items-center gap-3">
-                              <motion.div 
-                                className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 font-mono font-bold text-[10px]"
-                                whileHover={{ scale: 1.1, rotate: 5 }}
-                              >
-                                {index + 1}
-                              </motion.div>
-                              <div className="font-bold text-slate-900 text-sm whitespace-nowrap">{emp.name}</div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <span className={cn("text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase tracking-wider", getBidangColor(emp.bidang))}>
-                              {emp.bidang || 'N/A'}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <code className="text-[10px] bg-slate-50 px-2 py-0.5 rounded border border-slate-100 text-slate-500 font-mono">{emp.nip}</code>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col gap-1.5">
-                              <div className="flex gap-3">
-                                <div className="flex items-center gap-1.5 text-[10px] font-medium text-slate-500 w-24">
-                                  <Instagram size={12} className={emp.igUsername ? "text-pink-500 shrink-0" : "text-slate-300 shrink-0"} />
-                                  <span className="truncate">{emp.igUsername || '-'}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5 text-[10px] font-medium text-slate-500 w-24">
-                                  <Facebook size={12} className={emp.fbName ? "text-blue-500 shrink-0" : "text-slate-300 shrink-0"} />
-                                  <span className="truncate">{emp.fbName || '-'}</span>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-1.5 text-[10px] font-medium text-slate-500">
-                                <TiktokIcon size={12} className={emp.tiktokName ? "text-slate-800 shrink-0" : "text-slate-300 shrink-0"} />
-                                <span className="truncate">{emp.tiktokName || '-'}</span>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right pr-6">
-                            <div className="flex justify-end gap-1">
-                            <Button 
-                              variant="secondary" 
-                              size="icon" 
-                              onClick={() => startEdit(emp)} 
-                              className={cn(
-                                "h-8 w-8 rounded-lg transition-all shadow-sm",
-                                editingId === emp.id ? "bg-indigo-600 text-white" : "bg-white border border-slate-200 text-slate-400 hover:text-slate-900"
-                              )}
-                              title="Edit"
-                            >
-                              <UserCircle size={14} />
-                            </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                onClick={() => confirmDelete(emp.id)} 
-                                className="h-8 w-8 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-all"
-                                title="Hapus"
-                              >
-                                <Trash2 size={14} />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </motion.tr>
+                          <EmployeeRow 
+                            key={emp.id} 
+                            emp={emp} 
+                            index={index} 
+                            onEdit={startEdit} 
+                            onDelete={confirmDelete}
+                          />
                       ))
                     )}
                   </motion.tbody>

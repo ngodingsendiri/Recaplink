@@ -46,18 +46,9 @@ import { useAuth } from './FirebaseProvider';
 import { db, signIn, logout } from '../lib/firebase';
 import { collection, onSnapshot, query, orderBy, doc, setDoc, serverTimestamp, limit } from 'firebase/firestore';
 import { cn, getBidangColor } from '@/lib/utils';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  Cell
-} from 'recharts';
-import { jsPDF } from 'jspdf';
-import { domToPng } from 'modern-screenshot';
+import { ErrorBoundary } from './ErrorBoundary';
+
+const EngagementChart = React.lazy(() => import('./EngagementChart'));
 
 const getLocalISODate = (date: Date) => {
   const y = date.getFullYear();
@@ -405,6 +396,9 @@ export default function EngagementDashboard() {
     // Wait for state to apply and DOM to update
     await new Promise(resolve => setTimeout(resolve, 100));
     try {
+      const { domToPng } = await import('modern-screenshot');
+      const { jsPDF } = await import('jspdf');
+
       const imgData = await domToPng(ref.current, {
         scale: 2,
         backgroundColor: '#ffffff',
@@ -440,6 +434,8 @@ export default function EngagementDashboard() {
     // Wait for state to apply and DOM to update
     await new Promise(resolve => setTimeout(resolve, 100));
     try {
+      const { domToPng } = await import('modern-screenshot');
+      
       const imgData = await domToPng(ref.current, {
         scale: 2,
         backgroundColor: '#ffffff',
@@ -821,9 +817,9 @@ export default function EngagementDashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative pb-20 lg:pb-0">
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-0">
         {/* Sticky App Header - Modern Mobile Style */}
-        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-100 px-4 h-16 flex items-center justify-between lg:px-8 lg:h-20">
+        <header className="sticky top-0 pt-safe z-30 bg-white/80 backdrop-blur-md border-b border-slate-100 px-4 h-[calc(4rem+env(safe-area-inset-top))] flex items-center justify-between lg:px-8 lg:h-20 lg:pt-0">
           <div className="flex items-center gap-3">
             <Button 
               variant="ghost" 
@@ -922,30 +918,9 @@ export default function EngagementDashboard() {
                           <CardDescription className="text-xs">Perbandingan interaksi harian Instagram, Facebook & TikTok</CardDescription>
                         </CardHeader>
                         <CardContent className="p-6 h-[300px] min-h-[300px]">
-                          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                            <BarChart data={chartData}>
-                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                              <XAxis 
-                                dataKey="name" 
-                                axisLine={false} 
-                                tickLine={false} 
-                                tick={{ fontSize: 10, fontWeight: 600, fill: '#94a3b8' }}
-                                dy={10}
-                              />
-                              <YAxis 
-                                axisLine={false} 
-                                tickLine={false} 
-                                tick={{ fontSize: 10, fontWeight: 600, fill: '#94a3b8' }}
-                              />
-                              <Tooltip 
-                                cursor={{ fill: '#f8fafc' }}
-                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                              />
-                              <Bar dataKey="ig" name="Instagram" stackId="a" fill="#ec4899" radius={[0, 0, 0, 0]} barSize={32} />
-                              <Bar dataKey="fb" name="Facebook" stackId="a" fill="#3b82f6" radius={[0, 0, 0, 0]} barSize={32} />
-                              <Bar dataKey="tiktok" name="TikTok" stackId="a" fill="#0f172a" radius={[4, 4, 0, 0]} barSize={32} />
-                            </BarChart>
-                          </ResponsiveContainer>
+                          <React.Suspense fallback={<div className="w-full h-full flex items-center justify-center bg-slate-50/50 rounded-xl text-slate-400 text-xs font-bold">Memuat Grafik...</div>}>
+                            <EngagementChart data={chartData} />
+                          </React.Suspense>
                         </CardContent>
                       </Card>
                     </motion.div>
@@ -1742,7 +1717,7 @@ export default function EngagementDashboard() {
         initial={{ y: 100 }}
         animate={{ y: 0 }}
         transition={{ type: "spring", stiffness: 200, damping: 25 }}
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-t border-slate-100 px-4 h-20 flex items-center justify-around pb-safe"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-t border-slate-100 px-4 h-[calc(5rem+env(safe-area-inset-bottom))] pb-safe flex items-center justify-around shadow-[0_-4px_24px_rgba(0,0,0,0.02)]"
       >
         <BottomNavItem 
           active={activeTab === 'dashboard'} 
@@ -1775,7 +1750,7 @@ export default function EngagementDashboard() {
   );
 }
 
-function BottomNavItem({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string }) {
+const BottomNavItem = React.memo(function BottomNavItem({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string }) {
   return (
     <button 
       onClick={onClick}
@@ -1799,9 +1774,9 @@ function BottomNavItem({ active, onClick, icon, label }: { active: boolean, onCl
       )}
     </button>
   );
-}
+});
 
-function StatCard({ title, value, icon, color }: { title: string, value: string, icon: React.ReactNode, color: string }) {
+const StatCard = React.memo(function StatCard({ title, value, icon, color }: { title: string, value: string, icon: React.ReactNode, color: string }) {
   const colorMap: Record<string, string> = {
     rose: 'bg-rose-50 text-rose-500 border-rose-100/50',
     sky: 'bg-sky-50 text-sky-500 border-sky-100/50',
@@ -1834,9 +1809,9 @@ function StatCard({ title, value, icon, color }: { title: string, value: string,
       </Card>
     </motion.div>
   );
-}
+});
 
-function NavItem({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string }) {
+const NavItem = React.memo(function NavItem({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string }) {
   return (
     <motion.div
       whileTap={{ scale: 0.96 }}
@@ -1864,4 +1839,4 @@ function NavItem({ active, onClick, icon, label }: { active: boolean, onClick: (
       </Button>
     </motion.div>
   );
-}
+});
